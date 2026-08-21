@@ -1,0 +1,291 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState, type FormEvent } from 'react';
+import { cn } from '@/lib/utils';
+import { localePath, pickLocalized, type Dictionary, type Locale } from '@/lib/i18n';
+import { useCartCount } from '@/lib/hooks/useCart';
+import { useCategories, useStoreSettings } from '@/lib/hooks/useCatalog';
+import { useSession } from '@/lib/hooks/useAuth';
+import { useUiStore } from '@/store/ui';
+import { useRecentStore } from '@/store/recent';
+import { BagIcon, CloseIcon, GiftIcon, MenuIcon, SearchIcon, UserIcon } from '@/components/ui/Icons';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { MegaMenu } from './MegaMenu';
+import { MobileNav } from './MobileNav';
+import { Wordmark } from './Wordmark';
+
+interface HeaderProps {
+  locale: Locale;
+  dict: Dictionary;
+}
+
+/**
+ * Reference header, top to bottom:
+ *
+ *   row 1 - logo on the left, search pill dead centre, account + bag on the right
+ *   row 2 - hamburger and the short "quick" menu, plain text, no pill
+ *   a teal panel is pinned to the top-right corner with a large rounded
+ *   bottom-left corner, carrying the B2B link
+ *
+ * Over the hero everything is white on a transparent bar; once the page scrolls
+ * (or on any sub-page) the bar turns solid white with dark marks.
+ */
+export function Header({ locale, dict }: HeaderProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const isHome = pathname === `/${locale}` || pathname === `/${locale}/`;
+  const [scrolled, setScrolled] = useState(false);
+  const [term, setTerm] = useState('');
+
+  const { data: settings } = useStoreSettings();
+  const { data: categories } = useCategories(true);
+  const { isAuthenticated } = useSession();
+  const cartCount = useCartCount();
+
+  const megaOpen = useUiStore((s) => s.megaMenuOpen);
+  const toggleMega = useUiStore((s) => s.toggleMegaMenu);
+  const searchOpen = useUiStore((s) => s.searchOpen);
+  const toggleSearch = useUiStore((s) => s.toggleSearch);
+  const toggleMobileNav = useUiStore((s) => s.toggleMobileNav);
+  const closeAll = useUiStore((s) => s.closeAll);
+  const pushSearch = useRecentStore((s) => s.pushSearch);
+
+  const [promoDismissed, setPromoDismissed] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    closeAll();
+  }, [pathname, closeAll]);
+
+  const transparent = isHome && !scrolled;
+
+  const submitSearch = (event: FormEvent) => {
+    event.preventDefault();
+    const clean = term.trim();
+    if (!clean) return;
+    pushSearch(clean);
+    closeAll();
+    router.push(`${localePath(locale, '/search')}?q=${encodeURIComponent(clean)}`);
+  };
+
+  const promo = settings?.promoBar;
+  const showPromo = Boolean(promo?.enabled && !promoDismissed);
+
+  /** The reference keeps this row short: four shortcuts, not the whole tree. */
+  const quickLinks = [
+    { label: `${dict.nav.today}+`, href: '/catalog/flower-gifts?delivery=quick' },
+    { label: dict.nav.trend, href: '/catalog/trend-pick' },
+    { label: dict.nav.diy, href: '/catalog/diy-market' },
+    { label: dict.nav.subscription, href: '/subscription' },
+  ];
+
+  return (
+    <>
+      {showPromo && promo && (
+        <div className="relative z-[120] bg-brand">
+          <div className="rail flex h-9 items-center justify-center text-[12px] text-white">
+            <Link href={promo.href ? localePath(locale, promo.href) : '#'} className="truncate">
+              {pickLocalized(promo.text, locale)}
+            </Link>
+            <button
+              type="button"
+              onClick={() => setPromoDismissed(true)}
+              aria-label={dict.common.close}
+              className="absolute right-4 flex h-5 w-5 items-center justify-center opacity-80 transition-opacity hover:opacity-100"
+            >
+              <CloseIcon className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <header
+        className={cn(
+          'z-[100] w-full transition-colors duration-base',
+          transparent ? 'absolute inset-x-0 text-white' : 'sticky top-0 bg-white text-ink shadow-[0_1px_0_rgba(0,0,0,0.06)]',
+        )}
+      >
+        {/* teal corner panel carrying the B2B link */}
+        <Link
+          href={localePath(locale, '/partner')}
+          className={cn(
+            'absolute right-0 top-0 z-[3] hidden items-start justify-end rounded-bl-[64px] bg-brand pb-7 pl-16 pr-8 pt-7 lg:flex',
+            'transition-[padding] duration-base hover:pr-10',
+            !transparent && 'rounded-bl-[40px] pb-5 pt-5',
+          )}
+        >
+          <span className="flex items-center gap-2 whitespace-nowrap text-[15px] font-medium text-white">
+            <GiftIcon className="h-5 w-5" />
+            {dict.nav.b2b}
+          </span>
+        </Link>
+
+        <div className="relative z-[2] mx-auto w-full max-w-[1600px] px-4 lg:px-10">
+          {/* row 1 - logo | centred search | account + bag */}
+          <div className="flex h-[60px] items-center gap-4 lg:h-[86px]">
+            <Link href={localePath(locale, '/')} aria-label={dict.meta.siteName} className="shrink-0">
+              <Wordmark tone={transparent ? 'light' : 'brand'} />
+            </Link>
+
+            <form
+              onSubmit={submitSearch}
+              className={cn(
+                'mx-auto hidden h-[46px] w-full max-w-[340px] items-center gap-3 rounded-pill px-5 lg:flex',
+                transparent
+                  ? 'bg-black/35 text-white backdrop-blur-[10px]'
+                  : 'bg-surface-soft text-ink',
+              )}
+              role="search"
+            >
+              <input
+                value={term}
+                onChange={(event) => setTerm(event.target.value)}
+                placeholder={dict.nav.searchPlaceholder}
+                aria-label={dict.nav.search}
+                className={cn(
+                  'min-w-0 flex-1 border-0 bg-transparent text-[13px] outline-none',
+                  transparent ? 'placeholder:text-white/80' : 'placeholder:text-ink-faint',
+                )}
+              />
+              <button type="submit" aria-label={dict.nav.search} className="shrink-0">
+                <SearchIcon className="h-[18px] w-[18px]" />
+              </button>
+            </form>
+
+            <nav className="ml-auto flex items-center gap-1 lg:ml-0 lg:mr-[210px]" aria-label={dict.nav.menu}>
+              <button
+                type="button"
+                onClick={() => toggleSearch()}
+                aria-label={dict.nav.search}
+                className="flex h-10 w-10 items-center justify-center lg:hidden"
+              >
+                <SearchIcon className="h-5 w-5" />
+              </button>
+
+              <Link
+                href={localePath(locale, isAuthenticated ? '/account' : '/login')}
+                aria-label={dict.nav.account}
+                className="flex h-10 w-10 items-center justify-center transition-opacity duration-fast hover:opacity-70"
+              >
+                <UserIcon className="h-[22px] w-[22px]" />
+              </Link>
+
+              <Link
+                href={localePath(locale, '/cart')}
+                aria-label={dict.nav.cart}
+                className="relative flex h-10 w-10 items-center justify-center transition-opacity duration-fast hover:opacity-70"
+              >
+                <BagIcon className="h-[22px] w-[22px]" />
+                <span
+                  className={cn(
+                    'absolute right-0.5 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1',
+                    'text-[10px] font-medium leading-none text-white',
+                    cartCount > 0 ? 'bg-danger' : 'bg-danger/70',
+                  )}
+                >
+                  {cartCount}
+                </span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => toggleMobileNav(true)}
+                aria-label={dict.nav.menu}
+                className="flex h-10 w-10 items-center justify-center lg:hidden"
+              >
+                <MenuIcon className="h-5 w-5" />
+              </button>
+            </nav>
+          </div>
+
+          {/* row 2 - hamburger + short menu, plain text */}
+          <nav
+            className="relative hidden h-[52px] items-center gap-1 text-[15px] lg:flex"
+            aria-label={dict.nav.allMenu}
+          >
+            <button
+              type="button"
+              onClick={() => toggleMega()}
+              aria-expanded={megaOpen}
+              aria-label={dict.nav.allMenu}
+              className="flex h-10 w-10 items-center justify-center transition-opacity duration-fast hover:opacity-70"
+            >
+              {megaOpen ? <CloseIcon className="h-[22px] w-[22px]" /> : <MenuIcon className="h-[22px] w-[22px]" />}
+            </button>
+
+            <ul className="flex items-center">
+              {quickLinks.map((link) => {
+                const [base] = link.href.split('?');
+                const active = pathname.startsWith(localePath(locale, base));
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={localePath(locale, link.href)}
+                      className={cn(
+                        'inline-block whitespace-nowrap px-3.5 py-2 font-medium transition-opacity duration-fast hover:opacity-70',
+                        active && !transparent && 'text-brand',
+                      )}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="ml-auto mr-[210px]">
+              <LanguageSwitcher locale={locale} transparent={transparent} label={dict.nav.language} />
+            </div>
+
+            <MegaMenu
+              open={megaOpen}
+              locale={locale}
+              dict={dict}
+              categories={categories ?? []}
+              onClose={() => toggleMega(false)}
+            />
+          </nav>
+        </div>
+
+        {searchOpen && (
+          <div className="absolute inset-x-0 top-full z-[101] px-3 pb-3 lg:hidden">
+            <form
+              onSubmit={submitSearch}
+              className={cn(
+                'flex h-12 w-full items-center gap-3 rounded-pill px-5',
+                transparent ? 'bg-black/45 text-white backdrop-blur-[10px]' : 'bg-surface-soft text-ink',
+              )}
+              role="search"
+            >
+              <input
+                autoFocus
+                value={term}
+                onChange={(event) => setTerm(event.target.value)}
+                placeholder={dict.nav.searchPlaceholder}
+                aria-label={dict.nav.search}
+                className={cn(
+                  'min-w-0 flex-1 border-0 bg-transparent text-[13px] outline-none',
+                  transparent ? 'placeholder:text-white/80' : 'placeholder:text-ink-faint',
+                )}
+              />
+              <button type="submit" aria-label={dict.nav.search}>
+                <SearchIcon className="h-[18px] w-[18px]" />
+              </button>
+            </form>
+          </div>
+        )}
+      </header>
+
+      <MobileNav locale={locale} dict={dict} categories={categories ?? []} />
+    </>
+  );
+}
