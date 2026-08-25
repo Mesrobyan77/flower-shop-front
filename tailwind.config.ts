@@ -119,6 +119,11 @@ const config: Config = {
           from: { opacity: '0', transform: 'scale(.97)' },
           to: { opacity: '1', transform: 'scale(1)' },
         },
+        // two identical halves scroll past; -50% lands exactly on the seam
+        marquee: {
+          from: { transform: 'translate3d(0,0,0)' },
+          to: { transform: 'translate3d(-50%,0,0)' },
+        },
         shimmer: {
           '0%': { backgroundPosition: '-400px 0' },
           '100%': { backgroundPosition: '400px 0' },
@@ -134,6 +139,7 @@ const config: Config = {
         'slide-down': 'slide-down 200ms ease-out both',
         'scale-in': 'scale-in 180ms ease-out both',
         shimmer: 'shimmer 1.4s linear infinite',
+        marquee: 'marquee var(--marquee-duration, 60s) linear infinite',
         'slow-pan': 'slow-pan 18s ease-in-out infinite',
       },
     },

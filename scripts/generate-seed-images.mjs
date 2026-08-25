@@ -169,6 +169,9 @@ function main() {
   write('event-01', makeSvg('event-01', 960, 600, { blooms: 5 }));
   count += 1;
 
+  write('art-backdrop', makeSvg('art-backdrop', 1920, 560, { blooms: 14 }));
+  count += 1;
+
   for (const slug of CATEGORY_SLUGS) {
     write(`cat-${slug}`, makeSvg(`cat-${slug}`, 640, 480, { blooms: 4 }));
     count += 1;

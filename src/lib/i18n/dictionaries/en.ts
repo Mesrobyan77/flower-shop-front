@@ -2,7 +2,7 @@ import type { Dictionary } from './hy';
 
 export const en: Dictionary = {
   meta: {
-    siteName: 'Xch Flower',
+    siteName: 'Anahit Flower Design',
     tagline: 'Flower delivery, number one',
     description:
       'Flower delivery across Armenia. Two to three hours in Yerevan, same day. Bouquets, baskets, opening plants, wedding and condolence arrangements.',

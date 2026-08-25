@@ -16,7 +16,7 @@ export function Wordmark({ tone = 'brand', className }: { tone?: 'brand' | 'ligh
       height={26}
       className={cn('h-[22px] w-[132px] lg:h-[26px] lg:w-[155px]', className)}
       role="img"
-      aria-label="Xch Flower"
+      aria-label="Anahit Flower Design"
     >
       <g fill="none" stroke={accent} strokeWidth="1.4" strokeLinecap="round">
         <circle cx="13" cy="9.5" r="3.1" fill={accent} stroke="none" opacity="0.9" />
@@ -33,10 +33,10 @@ export function Wordmark({ tone = 'brand', className }: { tone?: 'brand' | 'ligh
         fill={color}
         fontSize="15"
         fontWeight="700"
-        letterSpacing="0.6"
+        letterSpacing="1.8"
         fontFamily="var(--font-display), Roboto, Arial, sans-serif"
       >
-        XCH FLOWER
+        ANAHIT
       </text>
       <text
         x="32"
@@ -47,7 +47,7 @@ export function Wordmark({ tone = 'brand', className }: { tone?: 'brand' | 'ligh
         opacity="0.8"
         fontFamily="var(--font-display), Roboto, Arial, sans-serif"
       >
-        FLOWER DELIVERY
+        FLOWER DESIGN
       </text>
     </svg>
   );

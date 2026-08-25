@@ -58,7 +58,7 @@ export default async function ProductPage({ params }: Params) {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-4 py-6 lg:py-10">
+    <div className="mx-auto w-full max-w-[1292px] px-4 py-6 lg:py-10">
       <RecordRecentView product={product} locale={params.locale} />
       <Breadcrumb items={crumbs} />
 
@@ -77,7 +77,11 @@ export default async function ProductPage({ params }: Params) {
       </div>
 
       <div className="mt-4 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
-        <ProductGallery images={product.images} alt={name} zoomLabel={dict.common.more} />
+        {/* the purchase rail is far taller than the gallery, so the gallery rides
+            along with it instead of leaving a column of dead space */}
+        <div className="lg:sticky lg:top-[96px] lg:self-start">
+          <ProductGallery images={product.images} alt={name} zoomLabel={dict.common.more} />
+        </div>
 
         <div className="flex flex-col">
           <p className="flex flex-wrap items-baseline gap-x-3 border-b border-line-soft pb-6">

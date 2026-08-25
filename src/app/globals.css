@@ -27,7 +27,7 @@
   --danger: #ff0000;
   --info: #53b2e5;
 
-  --rail: 1260px;
+  --rail: 1292px;
   --header-h: 80px;
   --gnb-h: 50px;
 
@@ -89,12 +89,6 @@
     padding-inline: 16px;
   }
 
-  @media (min-width: 768px) {
-    .rail {
-      padding-inline: 20px;
-    }
-  }
-
   /* .style-floating_bar - the reference "liquid glass" pill. */
   .glass-pill {
     display: flex;
@@ -140,6 +134,18 @@
     -webkit-backdrop-filter: blur(16px);
     background-color: rgba(255, 255, 255, 0.85);
     box-shadow: 0 0 9px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Catalogue photography: no drag-to-desktop, no long-press save sheet,
+     no accidental selection. A deterrent only - see ImageGuard. */
+  img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
   }
 
   .skeleton {

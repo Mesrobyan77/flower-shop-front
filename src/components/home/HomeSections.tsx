@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { cn, formatNumber } from '@/lib/utils';
 import { localePath, pickLocalized, type Dictionary, type Locale } from '@/lib/i18n';
 import { ChevronIcon, ClockIcon, TruckIcon } from '@/components/ui/Icons';
@@ -19,21 +19,21 @@ export function CategoryCircles({ tiles, locale }: { tiles: ThemeTile[]; locale:
   if (!tiles.length) return null;
 
   return (
-    <nav className="border-b border-line-soft bg-white py-8 lg:py-12" aria-label="categories">
-      <div className="mx-auto w-full max-w-[1400px] px-4">
-        <ul className="flex justify-start gap-4 overflow-x-auto px-1 no-scrollbar lg:justify-center lg:gap-10 lg:overflow-visible">
+    <nav className="bg-white py-6 lg:py-5" aria-label="categories">
+      <div className="mx-auto w-full max-w-[1292px] px-4">
+        <ul className="flex justify-start gap-6 overflow-x-auto px-1 no-scrollbar lg:gap-[42px] 4xl:justify-center 4xl:overflow-visible">
           {[...tiles]
             .sort((a, b) => a.order - b.order)
             .map((tile) => (
               <li key={tile.href + tile.order} className="shrink-0">
-                <Link href={localePath(locale, tile.href)} className="group flex w-[92px] flex-col items-center lg:w-[112px]">
-                  <span className="relative block h-[92px] w-[92px] overflow-hidden rounded-full bg-surface-soft lg:h-[112px] lg:w-[112px]">
+                <Link href={localePath(locale, tile.href)} className="group flex w-[88px] flex-col items-center lg:w-[120px]">
+                  <span className="relative block h-[88px] w-[88px] overflow-hidden rounded-full bg-surface-soft lg:h-[120px] lg:w-[120px]">
                     {tile.image && (
                       <Image
                         src={tile.image}
                         alt={pickLocalized(tile.title, locale)}
                         fill
-                        sizes="112px"
+                        sizes="120px"
                         className={cn(
                           'object-cover transition-transform duration-[600ms] ease-out group-hover:scale-105',
                           tile.animated && 'animate-slow-pan',
@@ -41,7 +41,7 @@ export function CategoryCircles({ tiles, locale }: { tiles: ThemeTile[]; locale:
                       />
                     )}
                   </span>
-                  <span className="mt-3 text-center text-[13px] font-medium leading-snug text-ink transition-colors duration-fast group-hover:text-brand lg:text-[14px]">
+                  <span className="mt-[15px] text-center text-[13px] leading-[1.365] text-[#444] transition-colors duration-fast group-hover:text-brand lg:text-[16px]">
                     {pickLocalized(tile.title, locale)}
                   </span>
                 </Link>
@@ -72,18 +72,18 @@ export function HomeSectionHeader({
   if (centered) {
     return (
       <div className={cn('mb-7 text-center', className)}>
-        <h2 className="text-[22px] font-bold tracking-tight text-ink-strong lg:text-[28px]">{title}</h2>
+        <h2 className="text-[24px] font-bold leading-[1.4] text-ink lg:text-[31px]">{title}</h2>
       </div>
     );
   }
 
   return (
-    <div className={cn('mb-6 flex items-end justify-between gap-4 lg:mb-8', className)}>
-      <h2 className="text-[21px] font-bold tracking-tight text-ink-strong lg:text-[26px]">{title}</h2>
+    <div className={cn('mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-2', className)}>
+      <h2 className="min-w-0 text-[24px] font-bold leading-[1.4] text-ink lg:text-[31px]">{title}</h2>
       {href && (
         <Link
           href={href}
-          className="group inline-flex shrink-0 items-center gap-1.5 text-[13px] text-ink-soft transition-colors duration-fast hover:text-ink"
+          className="group inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[14px] text-[#a4a4a4] transition-colors duration-fast hover:text-ink lg:text-[16px]"
         >
           {moreLabel}
           <span className="transition-transform duration-fast group-hover:translate-x-0.5">&rarr;</span>
@@ -108,7 +108,7 @@ export function PillTabs({
   if (items.length <= 1) return null;
 
   return (
-    <div className={cn('flex flex-wrap gap-2', className)} role="tablist">
+    <div className={cn('flex flex-wrap gap-2.5', className)} role="tablist">
       {items.map((item) => (
         <button
           key={item.key}
@@ -117,10 +117,10 @@ export function PillTabs({
           aria-selected={active === item.key}
           onClick={() => onChange(item.key)}
           className={cn(
-            'h-9 rounded-pill px-5 text-[13px] font-medium transition-colors duration-fast',
+            'h-[45px] rounded-[24px] border px-[14px] text-[14px] transition-colors duration-fast lg:text-[16px]',
             active === item.key
-              ? 'bg-brand text-white'
-              : 'border border-line bg-white text-ink-muted hover:border-ink-soft hover:text-ink',
+              ? 'border-brand bg-brand text-white'
+              : 'border-line-strong bg-transparent text-[#ccc] hover:border-ink-soft hover:text-ink-muted',
           )}
         >
           {item.label}
@@ -133,8 +133,12 @@ export function PillTabs({
 /* --------------------------- edge-to-edge image rail ---------------------- */
 
 /**
- * The "new arrivals" strip runs past both edges of the viewport and scrolls
- * horizontally, showing artwork only - no captions.
+ * The "new arrivals" strip: artwork only, no captions, drifting continuously
+ * past both edges of the viewport.
+ *
+ * Two identical halves sit side by side and the track is translated by exactly
+ * -50%, so the loop returns to its start with no visible seam. Hovering pauses
+ * it, and anyone who prefers reduced motion gets a plain scrollable strip.
  */
 export function ImageRail({
   items,
@@ -145,26 +149,48 @@ export function ImageRail({
 }) {
   if (!items.length) return null;
 
-  return (
-    <div className="overflow-x-auto pb-2 no-scrollbar">
-      <div className="flex gap-4 px-4 lg:px-10">
-        {items.map((item) => (
+  // a calm, constant pace regardless of how many tiles the rail holds
+  const duration = `${Math.max(28, items.length * 5)}s`;
+
+  const half = (copy: number) => (
+    <ul
+      key={copy}
+      className="flex shrink-0 gap-[15px] pr-[15px]"
+      aria-hidden={copy === 1 || undefined}
+    >
+      {items.map((item) => (
+        <li key={`${copy}-${item.slug}`}>
           <Link
-            key={item.slug}
             href={localePath(locale, `/product/${item.slug}`)}
-            className="group relative block h-[220px] w-[200px] shrink-0 overflow-hidden rounded-[18px] bg-surface-soft lg:h-[300px] lg:w-[260px]"
+            tabIndex={copy === 1 ? -1 : undefined}
+            className="group relative block h-[200px] w-[200px] overflow-hidden rounded-[24px] bg-surface-soft lg:h-[240px] lg:w-[240px]"
           >
             {item.image && (
               <Image
                 src={item.image}
-                alt={item.alt}
+                alt={copy === 1 ? '' : item.alt}
                 fill
-                sizes="260px"
+                sizes="240px"
                 className="object-cover transition-transform duration-[600ms] ease-out group-hover:scale-105"
               />
             )}
           </Link>
-        ))}
+        </li>
+      ))}
+    </ul>
+  );
+
+  return (
+    <div className="group/rail relative overflow-hidden motion-reduce:overflow-x-auto motion-reduce:no-scrollbar">
+      <div
+        className={cn(
+          'flex w-max animate-marquee',
+          'group-hover/rail:[animation-play-state:paused]',
+          'motion-reduce:animate-none',
+        )}
+        style={{ '--marquee-duration': duration } as CSSProperties}
+      >
+        {[0, 1].map(half)}
       </div>
     </div>
   );
@@ -235,7 +261,7 @@ export function AwardBand({
 
   return (
     <section ref={ref} className="py-14 lg:py-20">
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col items-center gap-10 px-4 lg:flex-row lg:justify-center lg:gap-24">
+      <div className="mx-auto flex w-full max-w-[1292px] flex-col items-center gap-10 px-4 lg:flex-row lg:justify-center lg:gap-24">
         <div className="flex items-center gap-5">
           <AwardMedal years={counters.awardYears} />
           <div>
@@ -316,7 +342,7 @@ function AwardMedal({ years }: { years: number }) {
 
 export function QuickBanner({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   return (
-    <section className="mx-auto w-full max-w-[1400px] px-4 py-10 lg:py-14">
+    <section className="mx-auto w-full max-w-[1292px] px-4 py-10 lg:py-14">
       <Link
         href={`${localePath(locale, '/catalog/flower-gifts')}?delivery=quick`}
         className="group relative flex flex-col gap-4 overflow-hidden rounded-[24px] bg-brand px-6 py-9 text-white lg:flex-row lg:items-center lg:justify-between lg:px-12 lg:py-12"
@@ -342,7 +368,7 @@ export function QuickBanner({ locale, dict }: { locale: Locale; dict: Dictionary
 
 export function SubscriptionTeaser({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   return (
-    <section className="mx-auto w-full max-w-[1400px] px-4 pb-10 lg:pb-14">
+    <section className="mx-auto w-full max-w-[1292px] px-4 pb-10 lg:pb-14">
       <div className="grid overflow-hidden rounded-[24px] border border-line lg:grid-cols-2">
         <div className="flex flex-col justify-center gap-3 px-6 py-10 lg:px-14 lg:py-16">
           <p className="text-[11px] uppercase tracking-[0.22em] text-olive-dark">{dict.nav.subscription}</p>
@@ -391,7 +417,7 @@ export function PhotoGallery({ images, title }: { images: string[]; title: strin
   ];
 
   return (
-    <section className="mx-auto w-full max-w-[1400px] px-4 pb-14 lg:pb-20" aria-label={title}>
+    <section className="mx-auto w-full max-w-[1292px] px-4 pb-14 lg:pb-20" aria-label={title}>
       <div className="grid auto-rows-[110px] grid-cols-4 gap-3 lg:auto-rows-[150px] lg:grid-cols-6 lg:gap-4">
         {images.slice(0, spans.length).map((src, index) => (
           <div
@@ -420,11 +446,11 @@ export function MagazineStrip({
   if (!posts.length) return null;
 
   return (
-    <section className="mx-auto w-full max-w-[1400px] px-4 pb-14 lg:pb-20">
+    <section className="mx-auto w-full max-w-[1292px] px-4 pb-14 lg:pb-20">
       <HomeSectionHeader
         title={dict.support.magazine}
         href={localePath(locale, '/magazine')}
-        moreLabel={`${dict.support.magazine} ${dict.common.more}`}
+        moreLabel={dict.common.seeAll}
       />
 
       <div className="grid gap-5 lg:grid-cols-3">

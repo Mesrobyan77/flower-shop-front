@@ -7,6 +7,7 @@ import { ApiClientError, setUnauthorizedHandler } from '@/lib/api/client';
 import { useSyncSession } from '@/lib/hooks/useAuth';
 import { useAuthStore } from '@/store/auth';
 import { ToastHost } from '@/components/ui/Feedback';
+import { ImageGuard } from '@/components/ui/ImageGuard';
 
 function makeQueryClient() {
   return new QueryClient({
@@ -49,6 +50,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={client}>
       <SessionBridge>{children}</SessionBridge>
+      <ImageGuard />
       <ToastHost />
     </QueryClientProvider>
   );

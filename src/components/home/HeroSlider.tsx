@@ -18,11 +18,9 @@ const AUTOPLAY_MS = 6000;
 export function HeroSlider({
   slides,
   locale,
-  ctaFallback,
 }: {
   slides: HeroSlide[];
   locale: Locale;
-  ctaFallback: string;
 }) {
   const ordered = [...slides].sort((a, b) => a.order - b.order);
   const [index, setIndex] = useState(0);
@@ -60,7 +58,7 @@ export function HeroSlider({
   return (
     <section className="relative bg-brand" aria-roledescription="carousel">
       <div
-        className="relative h-[460px] w-full overflow-hidden rounded-br-[120px] bg-ink-black sm:h-[520px] lg:h-[720px]"
+        className="relative h-[460px] w-full overflow-hidden rounded-br-[120px] bg-ink-black sm:h-[520px] lg:h-[684px]"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
         onTouchStart={(event) => {
@@ -90,31 +88,33 @@ export function HeroSlider({
               sizes="100vw"
               className={cn('object-cover', i === index && 'animate-slow-pan')}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-black/25" />
+            {/* the scrim only has to carry the bottom-left headline; the header lays
+                its own teal wash over the top edge, so keep that end almost clear */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent" />
+            {slide.href && (
+              <Link
+                href={localePath(locale, slide.href)}
+                className="absolute inset-0"
+                tabIndex={i === index ? 0 : -1}
+                aria-label={pickLocalized(slide.title, locale)}
+              />
+            )}
           </div>
         ))}
 
         {/* headline sits low-left over the image, matching the reference */}
-        <div className="absolute inset-x-0 bottom-[110px] lg:bottom-[150px]">
-          <div className="mx-auto w-full max-w-[1600px] px-6 lg:px-16">
-            <div className="max-w-[640px] text-white">
+        <div className="absolute inset-x-0 bottom-[76px] lg:bottom-[103px]">
+          <div className="mx-auto w-full max-w-[1260px] px-6 lg:pl-[45px] lg:pr-0">
+            <div className="pointer-events-none max-w-[640px] text-white">
               {active.title && (
-                <h2 className="text-[30px] font-bold leading-[1.2] tracking-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] lg:text-[46px]">
+                <h2 className="text-[27px] font-bold leading-[1.4] drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] lg:text-[39px]">
                   {pickLocalized(active.title, locale)}
                 </h2>
               )}
               {active.subtitle && (
-                <p className="mt-3 text-[14px] font-medium text-white/90 drop-shadow-[0_1px_8px_rgba(0,0,0,0.35)] lg:text-[17px]">
+                <p className="mt-1 text-[15px] font-medium leading-[1.4] text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.35)] lg:text-[21px]">
                   {pickLocalized(active.subtitle, locale)}
                 </p>
-              )}
-              {active.href && (
-                <Link
-                  href={localePath(locale, active.href)}
-                  className="mt-6 inline-flex h-11 items-center rounded-pill border border-white/70 px-6 text-[13px] backdrop-blur-sm transition-colors duration-fast hover:bg-white hover:text-ink-strong"
-                >
-                  {pickLocalized(active.ctaLabel, locale) || ctaFallback}
-                </Link>
               )}
             </div>
           </div>
@@ -125,7 +125,7 @@ export function HeroSlider({
             <HeroArrow direction="left" onClick={() => go(index - 1)} />
             <HeroArrow direction="right" onClick={() => go(index + 1)} />
 
-            <div className="absolute bottom-[60px] left-1/2 flex -translate-x-1/2 items-center gap-2.5">
+            <div className="absolute inset-x-0 bottom-[38px] mx-auto flex w-full max-w-[1260px] items-center gap-2.5 px-6 lg:bottom-[56px] lg:pl-[45px]">
               {ordered.map((_, i) => (
                 <button
                   key={i}

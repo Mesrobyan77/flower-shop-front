@@ -16,6 +16,11 @@ interface ProductCardProps {
   dict: Dictionary;
   priority?: boolean;
   className?: string;
+  /**
+   * The reference draws two card treatments: rounded 6:7 artwork on the home
+   * rails, and square sharp-cornered artwork on catalogue listings.
+   */
+  variant?: 'rail' | 'grid';
 }
 
 /**
@@ -23,7 +28,7 @@ interface ProductCardProps {
  *   rounded image · name · teal price with a small currency suffix ·
  *   express badge · muted "sold N  reviews N" meta line.
  */
-export function ProductCard({ product, locale, dict, priority, className }: ProductCardProps) {
+export function ProductCard({ product, locale, dict, priority, className, variant = 'rail' }: ProductCardProps) {
   const name = pickLocalized(product.name, locale);
   const image = product.thumbnail ?? product.images?.[0]?.url;
   const discounted = product.compareAtPrice && product.compareAtPrice > product.price;
@@ -31,7 +36,12 @@ export function ProductCard({ product, locale, dict, priority, className }: Prod
   return (
     <article className={cn('group flex flex-col', className)}>
       <Link href={localePath(locale, `/product/${product.slug}`)} className="block">
-        <div className="relative aspect-square w-full overflow-hidden rounded-[14px] bg-surface-soft">
+        <div
+          className={cn(
+            'relative w-full overflow-hidden bg-surface-soft',
+            variant === 'grid' ? 'aspect-square' : 'aspect-[6/7] rounded-[24px]',
+          )}
+        >
           {image ? (
             <Image
               src={image}
@@ -46,7 +56,7 @@ export function ProductCard({ product, locale, dict, priority, className }: Prod
           )}
         </div>
 
-        <h3 className="mt-3.5 line-clamp-2 text-[14px] leading-snug text-ink transition-colors duration-fast group-hover:text-brand">
+        <h3 className="mt-4 line-clamp-2 text-[14px] leading-[1.4] text-ink-muted transition-colors duration-fast group-hover:text-brand lg:text-[15px]">
           {name}
         </h3>
 
@@ -127,9 +137,16 @@ export function ProductGrid({
   }[columns];
 
   return (
-    <div className={cn('grid gap-x-5 gap-y-10 lg:gap-x-6', cols, className)}>
+    <div className={cn('grid gap-x-[20px] gap-y-10', cols, className)}>
       {products.map((product, index) => (
-        <ProductCard key={product.id} product={product} locale={locale} dict={dict} priority={index < 4} />
+        <ProductCard
+          key={product.id}
+          product={product}
+          locale={locale}
+          dict={dict}
+          variant="grid"
+          priority={index < 4}
+        />
       ))}
     </div>
   );
@@ -174,7 +191,7 @@ export function ProductCarousel({
       <div
         ref={trackRef}
         onScroll={sync}
-        className="grid auto-cols-[46%] grid-flow-col gap-5 overflow-x-auto pb-1 no-scrollbar sm:auto-cols-[31%] lg:auto-cols-[23%]"
+        className="grid auto-cols-[46%] grid-flow-col gap-[15px] overflow-x-auto pb-1 no-scrollbar sm:auto-cols-[31%] lg:auto-cols-[calc((100%-60px)/5)]"
       >
         {products.map((product) => (
           <ProductCard key={product.id} product={product} locale={locale} dict={dict} />
@@ -182,10 +199,10 @@ export function ProductCarousel({
       </div>
 
       {!atStart && (
-        <RailArrow direction="left" onClick={() => scrollBy(-1)} className="absolute -left-5 top-[34%]" />
+        <RailArrow direction="left" onClick={() => scrollBy(-1)} className="absolute -left-4 top-[34%]" />
       )}
       {!atEnd && (
-        <RailArrow direction="right" onClick={() => scrollBy(1)} className="absolute -right-5 top-[34%]" />
+        <RailArrow direction="right" onClick={() => scrollBy(1)} className="absolute -right-4 top-[34%]" />
       )}
     </div>
   );

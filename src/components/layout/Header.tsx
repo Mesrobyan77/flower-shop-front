@@ -112,13 +112,20 @@ export function Header({ locale, dict }: HeaderProps) {
         className={cn(
           'z-[100] w-full transition-colors duration-base',
           transparent ? 'absolute inset-x-0 text-white' : 'sticky top-0 bg-white text-ink shadow-[0_1px_0_rgba(0,0,0,0.06)]',
+          // the transparent bar is out of flow, so it has to clear the promo
+          // strip itself instead of starting at the top of the page
+          transparent && (showPromo ? 'top-9' : 'top-0'),
         )}
       >
+        {/* Over a bright hero the white logo and menu would disappear, so the
+            transparent variant lays down the reference's teal-to-clear wash. */}
+        {transparent && <div className="header-gradient pointer-events-none absolute inset-x-0 top-0 z-[1] h-[180px]" aria-hidden />}
+
         {/* teal corner panel carrying the B2B link */}
         <Link
           href={localePath(locale, '/partner')}
           className={cn(
-            'absolute right-0 top-0 z-[3] hidden items-start justify-end rounded-bl-[64px] bg-brand pb-7 pl-16 pr-8 pt-7 lg:flex',
+            'absolute right-0 top-0 z-[3] hidden items-start justify-end rounded-bl-[64px] bg-brand pb-7 pl-16 pr-8 pt-7 2xl:flex',
             'transition-[padding] duration-base hover:pr-10',
             !transparent && 'rounded-bl-[40px] pb-5 pt-5',
           )}
@@ -129,9 +136,9 @@ export function Header({ locale, dict }: HeaderProps) {
           </span>
         </Link>
 
-        <div className="relative z-[2] mx-auto w-full max-w-[1600px] px-4 lg:px-10">
+        <div className="relative z-[2] mx-auto w-full max-w-[1292px] px-4">
           {/* row 1 - logo | centred search | account + bag */}
-          <div className="flex h-[60px] items-center gap-4 lg:h-[86px]">
+          <div className="flex h-[60px] items-center gap-4 xl:h-[80px]">
             <Link href={localePath(locale, '/')} aria-label={dict.meta.siteName} className="shrink-0">
               <Wordmark tone={transparent ? 'light' : 'brand'} />
             </Link>
@@ -139,7 +146,7 @@ export function Header({ locale, dict }: HeaderProps) {
             <form
               onSubmit={submitSearch}
               className={cn(
-                'mx-auto hidden h-[46px] w-full max-w-[340px] items-center gap-3 rounded-pill px-5 lg:flex',
+                'mx-auto hidden h-[50px] w-full max-w-[355px] items-center gap-3 rounded-pill px-5 xl:flex',
                 transparent
                   ? 'bg-black/35 text-white backdrop-blur-[10px]'
                   : 'bg-surface-soft text-ink',
@@ -161,12 +168,12 @@ export function Header({ locale, dict }: HeaderProps) {
               </button>
             </form>
 
-            <nav className="ml-auto flex items-center gap-1 lg:ml-0 lg:mr-[210px]" aria-label={dict.nav.menu}>
+            <nav className="ml-auto flex items-center gap-1 2xl:ml-0 2xl:mr-[210px]" aria-label={dict.nav.menu}>
               <button
                 type="button"
                 onClick={() => toggleSearch()}
                 aria-label={dict.nav.search}
-                className="flex h-10 w-10 items-center justify-center lg:hidden"
+                className="flex h-10 w-10 items-center justify-center xl:hidden"
               >
                 <SearchIcon className="h-5 w-5" />
               </button>
@@ -174,7 +181,7 @@ export function Header({ locale, dict }: HeaderProps) {
               <Link
                 href={localePath(locale, isAuthenticated ? '/account' : '/login')}
                 aria-label={dict.nav.account}
-                className="flex h-10 w-10 items-center justify-center transition-opacity duration-fast hover:opacity-70"
+                className="flex h-[50px] w-[50px] items-center justify-center transition-opacity duration-fast hover:opacity-70"
               >
                 <UserIcon className="h-[22px] w-[22px]" />
               </Link>
@@ -200,7 +207,7 @@ export function Header({ locale, dict }: HeaderProps) {
                 type="button"
                 onClick={() => toggleMobileNav(true)}
                 aria-label={dict.nav.menu}
-                className="flex h-10 w-10 items-center justify-center lg:hidden"
+                className="flex h-10 w-10 items-center justify-center xl:hidden"
               >
                 <MenuIcon className="h-5 w-5" />
               </button>
@@ -209,7 +216,7 @@ export function Header({ locale, dict }: HeaderProps) {
 
           {/* row 2 - hamburger + short menu, plain text */}
           <nav
-            className="relative hidden h-[52px] items-center gap-1 text-[15px] lg:flex"
+            className="relative hidden h-[50px] items-center gap-1 text-[17px] xl:flex"
             aria-label={dict.nav.allMenu}
           >
             <button
@@ -242,7 +249,7 @@ export function Header({ locale, dict }: HeaderProps) {
               })}
             </ul>
 
-            <div className="ml-auto mr-[210px]">
+            <div className="ml-auto 2xl:mr-[210px]">
               <LanguageSwitcher locale={locale} transparent={transparent} label={dict.nav.language} />
             </div>
 
@@ -257,7 +264,7 @@ export function Header({ locale, dict }: HeaderProps) {
         </div>
 
         {searchOpen && (
-          <div className="absolute inset-x-0 top-full z-[101] px-3 pb-3 lg:hidden">
+          <div className="absolute inset-x-0 top-full z-[101] px-3 pb-3 xl:hidden">
             <form
               onSubmit={submitSearch}
               className={cn(

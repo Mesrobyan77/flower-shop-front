@@ -18,8 +18,8 @@ const display = Roboto({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Xch Flower',
-    template: '%s | Xch Flower',
+    default: 'Anahit Flower Design',
+    template: '%s | Anahit Flower Design',
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
 };

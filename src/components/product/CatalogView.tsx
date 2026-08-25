@@ -141,7 +141,7 @@ function CatalogViewInner({
   );
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-4 py-6 lg:py-10">
+    <div className="mx-auto w-full max-w-[1292px] px-4 py-6 lg:py-10">
       <Breadcrumb items={breadcrumb} />
 
       <header className="mt-8 text-center lg:mt-12">
@@ -291,7 +291,7 @@ export function CatalogView(props: CatalogViewProps) {
 
 function CatalogFallback({ title }: { title: string }) {
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-4 py-6 lg:py-10">
+    <div className="mx-auto w-full max-w-[1292px] px-4 py-6 lg:py-10">
       <header className="mt-8 text-center lg:mt-12">
         <h1 className="text-[24px] font-bold tracking-tight text-ink-strong lg:text-[30px]">{title}</h1>
       </header>

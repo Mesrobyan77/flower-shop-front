@@ -1,7 +1,7 @@
 /** Armenian is the default locale and the source of truth for translation keys. */
 export const hy = {
   meta: {
-    siteName: 'Xch Flower',
+    siteName: 'Anahit Flower Design',
     tagline: 'Ծաղիկների առաքում №1',
     description:
       'Ծաղիկների առաքում ամբողջ Հայաստանում. Երևանում՝ 2-3 ժամում, նույն օրը։ Ծաղկեփնջեր, ծաղկազամբյուղներ, բացման ծաղկամաններ, հարսանեկան և սգո ձևավորումներ։',

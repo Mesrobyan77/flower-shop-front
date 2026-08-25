@@ -87,13 +87,13 @@ export function SectionHeading({
   return (
     <div
       className={cn(
-        'mb-6 flex items-end gap-4 lg:mb-8',
+        'mb-6 flex flex-wrap items-end gap-x-4 gap-y-2 lg:mb-8',
         align === 'center' ? 'flex-col items-center text-center' : 'justify-between',
         className,
       )}
     >
       <div className={cn(align === 'center' && 'flex flex-col items-center')}>
-        <h2 className="text-[19px] font-semibold leading-tight tracking-tight text-ink-strong lg:text-[24px]">
+        <h2 className="min-w-0 text-[19px] font-semibold leading-tight tracking-tight text-ink-strong lg:text-[24px]">
           {title}
         </h2>
         {subtitle && <p className="mt-1.5 text-[12px] text-ink-soft lg:text-[13px]">{subtitle}</p>}
@@ -102,7 +102,7 @@ export function SectionHeading({
       {href && (
         <Link
           href={href}
-          className="group inline-flex shrink-0 items-center gap-1 text-[12px] text-ink-muted transition-colors duration-fast hover:text-brand lg:text-[13px]"
+          className="group inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[12px] text-ink-muted transition-colors duration-fast hover:text-brand lg:text-[13px]"
         >
           {moreLabel}
           <ChevronIcon className="h-3 w-3 transition-transform duration-fast group-hover:translate-x-0.5" />
@@ -188,7 +188,7 @@ export function Tabs({
   className?: string;
 }) {
   return (
-    <div className={cn('flex border-b border-line', className)} role="tablist">
+    <div className={cn('flex overflow-x-auto border-b border-line no-scrollbar', className)} role="tablist">
       {items.map((item) => (
         <button
           key={item.key}
@@ -197,7 +197,7 @@ export function Tabs({
           aria-selected={active === item.key}
           onClick={() => onChange(item.key)}
           className={cn(
-            'relative flex-1 px-2 py-3.5 text-[13px] transition-colors duration-fast lg:flex-none lg:px-8',
+            'relative shrink-0 whitespace-nowrap px-4 py-3.5 text-[13px] transition-colors duration-fast lg:px-8',
             active === item.key ? 'font-semibold text-ink-strong' : 'text-ink-soft hover:text-ink',
           )}
         >

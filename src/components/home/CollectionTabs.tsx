@@ -54,11 +54,11 @@ export function CollectionTabs({
     (activeCollection ? localePath(locale, `/collections/${activeCollection.slug}`) : localePath(locale, '/new'));
 
   return (
-    <section className="mx-auto w-full max-w-[1400px] px-4 py-10 lg:py-14">
+    <section className="mx-auto w-full max-w-[1292px] px-4 py-10 lg:py-14">
       <HomeSectionHeader
         title={title}
         href={href}
-        moreLabel={`${dict.common.seeAll} →`}
+        moreLabel={dict.common.seeAll}
         centered={centered}
       />
 
