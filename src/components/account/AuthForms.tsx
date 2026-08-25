@@ -134,7 +134,7 @@ function registerSchema(dict: Dictionary) {
         .regex(/[0-9]/, dict.validation.passwordRules),
       confirmPassword: z.string(),
       marketingOptIn: z.boolean().optional(),
-      agreeTerms: z.literal(true, { errorMap: () => ({ message: dict.validation.required }) }),
+      agreeTerms: z.boolean().refine((value) => value, dict.validation.required),
     })
     .refine((values) => values.password === values.confirmPassword, {
       message: dict.validation.passwordMatch,

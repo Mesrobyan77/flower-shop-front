@@ -126,18 +126,21 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   );
 });
 
-export function Checkbox({
-  label,
-  className,
-  ...rest
-}: InputHTMLAttributes<HTMLInputElement> & { label?: ReactNode }) {
-  return (
-    <label className={cn('flex cursor-pointer items-start gap-2 text-[13px] text-ink', className)}>
-      <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-brand" {...rest} />
-      {label && <span className="leading-snug">{label}</span>}
-    </label>
-  );
-}
+export const Checkbox = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { label?: ReactNode }>(
+  function Checkbox({ label, className, ...rest }, ref) {
+    return (
+      <label className={cn('flex cursor-pointer items-start gap-2 text-[13px] text-ink', className)}>
+        <input
+          ref={ref}
+          type="checkbox"
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-brand"
+          {...rest}
+        />
+        {label && <span className="leading-snug">{label}</span>}
+      </label>
+    );
+  },
+);
 
 export function Radio({
   label,
