@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { cn } from '@/lib/utils';
 import { localePath, type Dictionary, type Locale } from '@/lib/i18n';
@@ -155,7 +155,7 @@ export function RegisterForm({ locale, dict }: { locale: Locale; dict: Dictionar
       password: '',
       confirmPassword: '',
       marketingOptIn: false,
-      agreeTerms: undefined as never,
+      agreeTerms: false,
     },
   });
 
@@ -173,8 +173,10 @@ export function RegisterForm({ locale, dict }: { locale: Locale; dict: Dictionar
       router.refresh();
     } catch (error) {
       if (error instanceof ApiClientError) {
-        const emailError = error.fieldError('email');
-        if (emailError) form.setError('email', { message: error.message });
+        const fields = ['name', 'email', 'phone', 'password', 'confirmPassword', 'agreeTerms'] as const;
+        const field = fields.find((key) => error.fieldError(key));
+        const fieldMessage = field ? error.fieldError(field) : undefined;
+        if (field && fieldMessage) form.setError(field, { message: fieldMessage });
         else form.setError('password', { message: error.message });
       }
     }
@@ -229,7 +231,20 @@ export function RegisterForm({ locale, dict }: { locale: Locale; dict: Dictionar
 
       <Checkbox label={dict.auth.marketingOptIn} {...form.register('marketingOptIn')} />
       <div>
-        <Checkbox label={dict.auth.agreeTerms} {...form.register('agreeTerms')} />
+        <Controller
+          name="agreeTerms"
+          control={form.control}
+          render={({ field }) => (
+            <Checkbox
+              label={dict.auth.agreeTerms}
+              name={field.name}
+              ref={field.ref}
+              checked={field.value}
+              onBlur={field.onBlur}
+              onChange={(event) => field.onChange(event.target.checked)}
+            />
+          )}
+        />
         {form.formState.errors.agreeTerms && (
           <p className="mt-1 text-[11px] text-danger-soft">{form.formState.errors.agreeTerms.message}</p>
         )}
