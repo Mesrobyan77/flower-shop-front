@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/Feedback';
 import { PlusIcon, TrashIcon } from '@/components/ui/Icons';
 
 /**
- * Uploads land in MinIO through the API; Mongo only stores the object key and
+ * Uploads land in Cloudinary through the API; Mongo only stores the public id and
  * the public URL. The picker reuses already-uploaded files so an image is not
  * duplicated across products.
  */
