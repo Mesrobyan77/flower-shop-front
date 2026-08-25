@@ -9,25 +9,12 @@ import { RailArrow } from './HomeSections';
 import type { Collection, Product } from '@/types';
 
 /**
- * The band reads as one continuous mural rather than five tiles: the panels
- * overlap slightly and each one fades in from its left edge, so neighbouring
- * canvases bleed into each other the way a gallery wall would.
- *
- * Widths are uneven on purpose - the night sky carries the centre while the
- * water lilies trail off at the right. All five works are public domain
- * (Van Gogh d.1890, Klimt d.1918, Monet d.1926); scans come from
- * scripts/fetch-gallery-panels.mjs.
+ * One mural fills the whole band. It sits in public/images rather than
+ * public/images/seed so it ships with the repo instead of being pulled by
+ * scripts/fetch-seed-photos.mjs, which keeps the section intact on a fresh
+ * clone and on a deploy.
  */
-const GALLERY_PANELS = [
-  { name: 'art-01', grow: 18, focus: '60% 50%' },
-  { name: 'art-02', grow: 18, focus: '50% 50%' },
-  { name: 'art-03', grow: 28, focus: '50% 50%' },
-  { name: 'art-04', grow: 22, focus: '45% 45%' },
-  { name: 'art-05', grow: 14, focus: '40% 50%' },
-].map((panel) => ({ ...panel, src: `/images/seed/${panel.name}.jpg` }));
-
-/** How far each canvas dissolves into the one on its left. */
-const BLEND = 'linear-gradient(to right, transparent 0%, #000 20%)';
+const BACKDROP = '/images/bg-famous.jpg';
 
 /**
  * Gallery band: a full-bleed painterly backdrop with the product rail straddling
@@ -76,32 +63,15 @@ export function ArtLineSection({
     <section className="relative" aria-label={title}>
       {/* the artwork band the rail overlaps */}
       <div className="relative h-[280px] w-full overflow-hidden bg-ink-strong sm:h-[360px] lg:h-[530px]">
-        {/* canvases overlap and dissolve into one another */}
-        <div className="absolute inset-0 flex" aria-hidden>
-          {GALLERY_PANELS.map((panel, index) => (
-            <div
-              key={panel.name}
-              className={cn('relative h-full', index > 2 && 'hidden sm:block')}
-              style={{
-                flexGrow: panel.grow,
-                flexBasis: 0,
-                marginLeft: index === 0 ? undefined : '-3%',
-                maskImage: index === 0 ? undefined : BLEND,
-                WebkitMaskImage: index === 0 ? undefined : BLEND,
-              }}
-            >
-              <Image
-                src={panel.src}
-                alt=""
-                fill
-                sizes="(max-width: 640px) 40vw, 30vw"
-                className="object-cover"
-                style={{ objectPosition: panel.focus }}
-                priority={index < 3}
-              />
-            </div>
-          ))}
-        </div>
+        <Image
+          src={BACKDROP}
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover"
+          style={{ objectPosition: '50% 45%' }}
+          priority
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/10 to-black/25" />
 
         <div className="absolute inset-x-0 top-0">
