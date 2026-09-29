@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Noto_Sans_Armenian, Roboto } from 'next/font/google';
-import './globals.css';
+import '@/app/globals.css';
+import FlowerCursor from '@/components/ui/FlowerCursor';
 
 const sans = Noto_Sans_Armenian({
   subsets: ['armenian', 'latin'],
@@ -34,7 +35,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="hy-AM" className={`${sans.variable} ${display.variable}`}>
-      <body>{children}</body>
+      <body>
+        <FlowerCursor/>
+        {children}
+      </body>
     </html>
   );
 }

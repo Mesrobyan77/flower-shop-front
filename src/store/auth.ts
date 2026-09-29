@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { setAccessToken } from '@/lib/api/client';
 import type { User } from '@/types';
 
@@ -15,10 +15,6 @@ interface AuthState {
   markHydrated: () => void;
 }
 
-/**
- * Only the access token and the public user shape live here. The refresh token
- * stays in an httpOnly cookie the browser never exposes to JavaScript.
- */
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -42,6 +38,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'xf-auth',
+      storage: createJSONStorage(() => 
+        typeof window !== 'undefined' ? localStorage : ({} as Storage)
+      ),
       partialize: (state) => ({ user: state.user, accessToken: state.accessToken }),
       onRehydrateStorage: () => (state) => {
         if (state?.accessToken) setAccessToken(state.accessToken);

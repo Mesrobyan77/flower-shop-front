@@ -10,6 +10,7 @@ export const hy = {
   nav: {
     allMenu: 'Ամբողջ ցանկը',
     today: 'Այսօր առաքում',
+    corporate: 'Կորպորատիվ',
     gifts: 'Ծաղկային նվերներ',
     opening: 'Բացման ծաղկամաններ',
     promotion: 'Առաջխաղացում',

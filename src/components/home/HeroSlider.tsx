@@ -10,11 +10,6 @@ import type { HeroSlide } from '@/types';
 
 const AUTOPLAY_MS = 6000;
 
-/**
- * Full-bleed hero the header floats over. The reference cuts a large rounded
- * corner out of the bottom-right of the image and lets a teal panel show
- * through, with the "next" affordance sitting inside that notch.
- */
 export function HeroSlider({
   slides,
   locale,
@@ -43,11 +38,6 @@ export function HeroSlider({
     return () => clearInterval(timer);
   }, [paused, count]);
 
-  useEffect(() => {
-    const onVisibility = () => setPaused(document.hidden);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, []);
 
   if (count === 0) {
     return <div className="h-[420px] w-full bg-brand-100 lg:h-[720px]" />;
@@ -58,7 +48,7 @@ export function HeroSlider({
   return (
     <section className="relative bg-brand" aria-roledescription="carousel">
       <div
-        className="relative h-[460px] w-full overflow-hidden rounded-br-[120px] bg-ink-black sm:h-[520px] lg:h-[684px]"
+        className="relative h-[460px] w-full overflow-hidden  bg-ink-black sm:h-[520px] lg:h-[684px]"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
         onTouchStart={(event) => {
@@ -88,9 +78,7 @@ export function HeroSlider({
               sizes="100vw"
               className={cn('object-cover', i === index && 'animate-slow-pan')}
             />
-            {/* the scrim only has to carry the bottom-left headline; the header lays
-                its own teal wash over the top edge, so keep that end almost clear */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
             {slide.href && (
               <Link
                 href={localePath(locale, slide.href)}
@@ -102,7 +90,7 @@ export function HeroSlider({
           </div>
         ))}
 
-        {/* headline sits low-left over the image, matching the reference */}
+        {/* Headline */}
         <div className="absolute inset-x-0 bottom-[76px] lg:bottom-[103px]">
           <div className="mx-auto w-full max-w-[1260px] px-6 lg:pl-[45px] lg:pr-0">
             <div className="pointer-events-none max-w-[640px] text-white">
@@ -125,6 +113,7 @@ export function HeroSlider({
             <HeroArrow direction="left" onClick={() => go(index - 1)} />
             <HeroArrow direction="right" onClick={() => go(index + 1)} />
 
+            {/* Pagination Dots */}
             <div className="absolute inset-x-0 bottom-[38px] mx-auto flex w-full max-w-[1260px] items-center gap-2.5 px-6 lg:bottom-[56px] lg:pl-[45px]">
               {ordered.map((_, i) => (
                 <button
@@ -134,8 +123,8 @@ export function HeroSlider({
                   aria-label={`Slide ${i + 1}`}
                   aria-current={i === index}
                   className={cn(
-                    'h-2 w-2 rounded-full transition-all duration-base',
-                    i === index ? 'bg-white' : 'bg-white/45 hover:bg-white/75',
+                    'h-2 w-2 rounded-full transition-all duration-300',
+                    i === index ? 'w-6 bg-white' : 'bg-white/45 hover:bg-white/75',
                   )}
                 />
               ))}
@@ -143,18 +132,6 @@ export function HeroSlider({
           </>
         )}
       </div>
-
-      {/* the teal notch under the rounded corner carries a forward affordance */}
-      {count > 1 && (
-        <button
-          type="button"
-          onClick={() => go(index + 1)}
-          aria-label="Next slide"
-          className="absolute bottom-4 right-6 hidden h-11 w-11 items-center justify-center rounded-full text-white/90 transition-transform duration-fast hover:translate-x-1 lg:flex"
-        >
-          <ArrowRight />
-        </button>
-      )}
     </section>
   );
 }
@@ -167,7 +144,7 @@ function HeroArrow({ direction, onClick }: { direction: 'left' | 'right'; onClic
       aria-label={direction === 'left' ? 'Previous slide' : 'Next slide'}
       className={cn(
         'absolute top-1/2 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full',
-        'bg-white/25 text-white backdrop-blur-[6px] transition-colors duration-fast hover:bg-white/45 lg:flex',
+        'bg-white/25 text-white backdrop-blur-[6px] transition-colors duration-200 hover:bg-white/45 lg:flex',
         direction === 'left' ? 'left-5' : 'right-5',
       )}
     >
@@ -178,8 +155,19 @@ function HeroArrow({ direction, onClick }: { direction: 'left' | 'right'; onClic
 
 function ArrowRight() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6" aria-hidden>
-      <path d="M4 12h15M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden
+    >
+      <path
+        d="M13.5 4.5L20.25 11.25M20.25 11.25L13.5 18M20.25 11.25L3.75 11.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

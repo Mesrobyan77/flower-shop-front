@@ -11,6 +11,7 @@ export const en: Dictionary = {
   nav: {
     allMenu: 'All categories',
     today: 'Same-day delivery',
+    corporate: 'Corporate',
     gifts: 'Flower gifts',
     opening: 'Opening plants',
     promotion: 'Promotion',

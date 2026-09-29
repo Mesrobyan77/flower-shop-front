@@ -11,6 +11,7 @@ export const ru: Dictionary = {
   nav: {
     allMenu: 'Все разделы',
     today: 'Доставка сегодня',
+    corporate: 'Корпоративным клиентам',
     gifts: 'Цветочные подарки',
     opening: 'Растения на открытие',
     promotion: 'Повышение',

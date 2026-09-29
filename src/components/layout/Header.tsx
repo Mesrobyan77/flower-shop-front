@@ -21,17 +21,6 @@ interface HeaderProps {
   dict: Dictionary;
 }
 
-/**
- * Reference header, top to bottom:
- *
- *   row 1 - logo on the left, search pill dead centre, account + bag on the right
- *   row 2 - hamburger and the short "quick" menu, plain text, no pill
- *   a teal panel is pinned to the top-right corner with a large rounded
- *   bottom-left corner, carrying the B2B link
- *
- * Over the hero everything is white on a transparent bar; once the page scrolls
- * (or on any sub-page) the bar turns solid white with dark marks.
- */
 export function Header({ locale, dict }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -56,7 +45,7 @@ export function Header({ locale, dict }: HeaderProps) {
   const [promoDismissed, setPromoDismissed] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
+    const onScroll = () => setScrolled(window.scrollY > 30);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -80,12 +69,12 @@ export function Header({ locale, dict }: HeaderProps) {
   const promo = settings?.promoBar;
   const showPromo = Boolean(promo?.enabled && !promoDismissed);
 
-  /** The reference keeps this row short: four shortcuts, not the whole tree. */
   const quickLinks = [
     { label: `${dict.nav.today}+`, href: '/catalog/flower-gifts?delivery=quick' },
     { label: dict.nav.trend, href: '/catalog/trend-pick' },
     { label: dict.nav.diy, href: '/catalog/diy-market' },
     { label: dict.nav.subscription, href: '/subscription' },
+    { label: dict.nav.corporate, href: '/partner' },
   ];
 
   return (
@@ -108,37 +97,28 @@ export function Header({ locale, dict }: HeaderProps) {
         </div>
       )}
 
+      {/* Header element: transition only background & shadow, NOT color */}
       <header
         className={cn(
-          'z-[100] w-full transition-colors duration-base',
-          transparent ? 'absolute inset-x-0 text-white' : 'sticky top-0 bg-white text-ink shadow-[0_1px_0_rgba(0,0,0,0.06)]',
-          // the transparent bar is out of flow, so it has to clear the promo
-          // strip itself instead of starting at the top of the page
-          transparent && (showPromo ? 'top-9' : 'top-0'),
+          'fixed inset-x-0 z-[100] w-full transition-[background-color,box-shadow,top] duration-300 ease-in-out',
+          showPromo ? (scrolled ? 'top-0' : 'top-9') : 'top-0',
+          transparent
+            ? 'bg-transparent text-white'
+            : 'bg-white text-ink shadow-[0_4px_20px_rgba(0,0,0,0.08)] backdrop-blur-md'
         )}
       >
-        {/* Over a bright hero the white logo and menu would disappear, so the
-            transparent variant lays down the reference's teal-to-clear wash. */}
-        {transparent && <div className="header-gradient pointer-events-none absolute inset-x-0 top-0 z-[1] h-[180px]" aria-hidden />}
-
-        {/* teal corner panel carrying the B2B link */}
-        <Link
-          href={localePath(locale, '/partner')}
+        {/* Top brand gradient for home hero transparency */}
+        <div
           className={cn(
-            'absolute right-0 top-0 z-[3] hidden items-start justify-end rounded-bl-[64px] bg-brand pb-7 pl-16 pr-8 pt-7 2xl:flex',
-            'transition-[padding] duration-base hover:pr-10',
-            !transparent && 'rounded-bl-[40px] pb-5 pt-5',
+            'pointer-events-none absolute inset-x-0 top-0 z-[1] h-[160px] bg-gradient-to-b from-[#004d43]/20 via-[#004d43]/30 to-transparent transition-opacity duration-300',
+            transparent ? 'opacity-100' : 'opacity-0'
           )}
-        >
-          <span className="flex items-center gap-2 whitespace-nowrap text-[15px] font-medium text-white">
-            <GiftIcon className="h-5 w-5" />
-            {dict.nav.b2b}
-          </span>
-        </Link>
+          aria-hidden
+        />
 
         <div className="relative z-[2] mx-auto w-full max-w-[1292px] px-4">
-          {/* row 1 - logo | centred search | account + bag */}
-          <div className="flex h-[60px] items-center gap-4 xl:h-[80px]">
+          {/* Row 1 - Logo, Search, Navigation */}
+          <div className="flex h-[60px] items-center gap-4 xl:h-[75px]">
             <Link href={localePath(locale, '/')} aria-label={dict.meta.siteName} className="shrink-0">
               <Wordmark tone={transparent ? 'light' : 'brand'} />
             </Link>
@@ -146,10 +126,10 @@ export function Header({ locale, dict }: HeaderProps) {
             <form
               onSubmit={submitSearch}
               className={cn(
-                'mx-auto hidden h-[50px] w-full max-w-[355px] items-center gap-3 rounded-pill px-5 xl:flex',
+                'mx-auto hidden h-[46px] w-full max-w-[355px] items-center gap-3 rounded-full px-5 transition-colors duration-200 xl:flex',
                 transparent
-                  ? 'bg-black/35 text-white backdrop-blur-[10px]'
-                  : 'bg-surface-soft text-ink',
+                  ? 'bg-white/20 text-white backdrop-blur-md'
+                  : 'bg-surface-soft text-ink'
               )}
               role="search"
             >
@@ -160,7 +140,7 @@ export function Header({ locale, dict }: HeaderProps) {
                 aria-label={dict.nav.search}
                 className={cn(
                   'min-w-0 flex-1 border-0 bg-transparent text-[13px] outline-none',
-                  transparent ? 'placeholder:text-white/80' : 'placeholder:text-ink-faint',
+                  transparent ? 'placeholder:text-white/80' : 'placeholder:text-ink-faint'
                 )}
               />
               <button type="submit" aria-label={dict.nav.search} className="shrink-0">
@@ -181,7 +161,7 @@ export function Header({ locale, dict }: HeaderProps) {
               <Link
                 href={localePath(locale, isAuthenticated ? '/account' : '/login')}
                 aria-label={dict.nav.account}
-                className="flex h-[50px] w-[50px] items-center justify-center transition-opacity duration-fast hover:opacity-70"
+                className="flex h-[50px] w-[50px] items-center justify-center transition-opacity hover:opacity-70"
               >
                 <UserIcon className="h-[22px] w-[22px]" />
               </Link>
@@ -189,14 +169,14 @@ export function Header({ locale, dict }: HeaderProps) {
               <Link
                 href={localePath(locale, '/cart')}
                 aria-label={dict.nav.cart}
-                className="relative flex h-10 w-10 items-center justify-center transition-opacity duration-fast hover:opacity-70"
+                className="relative flex h-10 w-10 items-center justify-center transition-opacity hover:opacity-70"
               >
                 <BagIcon className="h-[22px] w-[22px]" />
                 <span
                   className={cn(
                     'absolute right-0.5 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1',
                     'text-[10px] font-medium leading-none text-white',
-                    cartCount > 0 ? 'bg-danger' : 'bg-danger/70',
+                    cartCount > 0 ? 'bg-danger' : 'bg-danger/70'
                   )}
                 >
                   {cartCount}
@@ -214,9 +194,9 @@ export function Header({ locale, dict }: HeaderProps) {
             </nav>
           </div>
 
-          {/* row 2 - hamburger + short menu, plain text */}
+          {/* Row 2 - Menu links */}
           <nav
-            className="relative hidden h-[50px] items-center gap-1 text-[17px] xl:flex"
+            className="relative hidden h-[44px] items-center gap-1 text-[16px] xl:flex"
             aria-label={dict.nav.allMenu}
           >
             <button
@@ -224,7 +204,7 @@ export function Header({ locale, dict }: HeaderProps) {
               onClick={() => toggleMega()}
               aria-expanded={megaOpen}
               aria-label={dict.nav.allMenu}
-              className="flex h-10 w-10 items-center justify-center transition-opacity duration-fast hover:opacity-70"
+              className="flex h-10 w-10 items-center justify-center transition-opacity hover:opacity-70"
             >
               {megaOpen ? <CloseIcon className="h-[22px] w-[22px]" /> : <MenuIcon className="h-[22px] w-[22px]" />}
             </button>
@@ -238,8 +218,8 @@ export function Header({ locale, dict }: HeaderProps) {
                     <Link
                       href={localePath(locale, link.href)}
                       className={cn(
-                        'inline-block whitespace-nowrap px-3.5 py-2 font-medium transition-opacity duration-fast hover:opacity-70',
-                        active && !transparent && 'text-brand',
+                        'inline-block whitespace-nowrap px-3.5 py-1.5 font-medium transition-opacity hover:opacity-70',
+                        active && !transparent && 'text-brand'
                       )}
                     >
                       {link.label}
@@ -263,13 +243,14 @@ export function Header({ locale, dict }: HeaderProps) {
           </nav>
         </div>
 
+        {/* Mobile Search Input Popup */}
         {searchOpen && (
           <div className="absolute inset-x-0 top-full z-[101] px-3 pb-3 xl:hidden">
             <form
               onSubmit={submitSearch}
               className={cn(
-                'flex h-12 w-full items-center gap-3 rounded-pill px-5',
-                transparent ? 'bg-black/45 text-white backdrop-blur-[10px]' : 'bg-surface-soft text-ink',
+                'flex h-12 w-full items-center gap-3 rounded-full px-5',
+                transparent ? 'bg-black/60 text-white backdrop-blur-md' : 'bg-surface-soft text-ink'
               )}
               role="search"
             >
@@ -281,7 +262,7 @@ export function Header({ locale, dict }: HeaderProps) {
                 aria-label={dict.nav.search}
                 className={cn(
                   'min-w-0 flex-1 border-0 bg-transparent text-[13px] outline-none',
-                  transparent ? 'placeholder:text-white/80' : 'placeholder:text-ink-faint',
+                  transparent ? 'placeholder:text-white/80' : 'placeholder:text-ink-faint'
                 )}
               />
               <button type="submit" aria-label={dict.nav.search}>
@@ -291,6 +272,9 @@ export function Header({ locale, dict }: HeaderProps) {
           </div>
         )}
       </header>
+
+      {/* Spacer */}
+      {!isHome && <div className="h-[104px] xl:h-[119px]" />}
 
       <MobileNav locale={locale} dict={dict} categories={categories ?? []} />
     </>
