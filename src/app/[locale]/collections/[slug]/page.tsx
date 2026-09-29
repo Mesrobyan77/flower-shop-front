@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { serverGet } from '@/lib/api/client';
-import { getDictionary, localePath, pickLocalized, type Locale } from '@/lib/i18n';
+import { getDictionary, isLocale, localePath, pickLocalized, type Locale } from '@/lib/i18n';
 import { CatalogView } from '@/components/product/CatalogView';
 import type { Collection } from '@/types';
 import type { Metadata } from 'next';
@@ -8,10 +8,12 @@ import type { Metadata } from 'next';
 export const revalidate = 300;
 
 interface Params {
-  params: { locale: Locale; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }
 
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
+export async function generateMetadata(props: Params): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const collection = await serverGet<Collection>(`/collections/${params.slug}`);
   if (!collection) return {};
   return {
@@ -20,7 +22,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-export default async function CollectionPage({ params }: Params) {
+export default async function CollectionPage(props: Params) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const dict = getDictionary(params.locale);
   const collection = await serverGet<Collection>(`/collections/${params.slug}`);
   if (!collection) notFound();

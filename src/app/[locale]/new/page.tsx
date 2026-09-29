@@ -1,7 +1,10 @@
-import { getDictionary, localePath, type Locale } from '@/lib/i18n';
+import { notFound } from 'next/navigation';
+import { getDictionary, isLocale, localePath, type Locale } from '@/lib/i18n';
 import { CatalogView } from '@/components/product/CatalogView';
 
-export default function NewArrivalsPage({ params }: { params: { locale: Locale } }) {
+export default async function NewArrivalsPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const dict = getDictionary(params.locale);
 
   return (

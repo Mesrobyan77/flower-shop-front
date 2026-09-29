@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { serverGet } from '@/lib/api/client';
-import { getDictionary, localePath, pickLocalized, type Locale } from '@/lib/i18n';
+import { getDictionary, isLocale, localePath, pickLocalized, type Locale } from '@/lib/i18n';
 import { CatalogView } from '@/components/product/CatalogView';
 import type { Category } from '@/types';
 import type { Metadata } from 'next';
@@ -8,14 +8,16 @@ import type { Metadata } from 'next';
 export const revalidate = 300;
 
 interface Params {
-  params: { locale: Locale; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }
 
 async function loadCategory(slug: string) {
   return serverGet<{ category: Category; children: Category[] }>(`/categories/${slug}`);
 }
 
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
+export async function generateMetadata(props: Params): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const data = await loadCategory(params.slug);
   if (!data) return {};
   return {
@@ -24,7 +26,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-export default async function CategoryPage({ params }: Params) {
+export default async function CategoryPage(props: Params) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const dict = getDictionary(params.locale);
   const data = await loadCategory(params.slug);
   if (!data) notFound();

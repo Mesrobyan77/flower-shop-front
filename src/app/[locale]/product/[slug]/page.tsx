@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { serverGet } from '@/lib/api/client';
-import { getDictionary, localePath, pickLocalized, type Locale } from '@/lib/i18n';
+import { getDictionary, isLocale, localePath, pickLocalized, type Locale } from '@/lib/i18n';
 import { formatNumber } from '@/lib/utils';
 import { Breadcrumb } from '@/components/ui/Display';
 import { Rating } from '@/components/ui/Feedback';
@@ -17,15 +17,18 @@ import type { ProductDetailResponse } from '@/types';
 export const revalidate = 60;
 
 interface Params {
-  params: { locale: Locale; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }
 
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
+export async function generateMetadata(props: Params): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
+  const { locale } = params;
   const data = await serverGet<ProductDetailResponse>(`/products/${params.slug}`);
   if (!data) return {};
 
-  const name = pickLocalized(data.product.name, params.locale);
-  const description = pickLocalized(data.product.shortDescription, params.locale);
+  const name = pickLocalized(data.product.name, locale);
+  const description = pickLocalized(data.product.shortDescription, locale);
 
   return {
     title: name,
@@ -38,28 +41,31 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-export default async function ProductPage({ params }: Params) {
-  const dict = getDictionary(params.locale);
+export default async function ProductPage(props: Params) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
+  const { locale } = params;
+  const dict = getDictionary(locale);
   const data = await serverGet<ProductDetailResponse>(`/products/${params.slug}`);
   if (!data) notFound();
 
   const { product, breadcrumb, delivery, related } = data;
-  const name = pickLocalized(product.name, params.locale);
+  const name = pickLocalized(product.name, locale);
 
   /** Points a new member would earn, shown next to the grade benefit line. */
   const signupPoints = Math.round(product.price * 0.07);
 
   const crumbs = [
-    { label: dict.product.breadcrumbHome, href: localePath(params.locale, '/') },
+    { label: dict.product.breadcrumbHome, href: localePath(locale, '/') },
     ...breadcrumb.map((item) => ({
-      label: pickLocalized(item.name, params.locale),
-      href: localePath(params.locale, `/catalog/${item.slug}`),
+      label: pickLocalized(item.name, locale),
+      href: localePath(locale, `/catalog/${item.slug}`),
     })),
   ];
 
   return (
     <div className="mx-auto w-full max-w-[1292px] px-4 py-6 lg:py-10">
-      <RecordRecentView product={product} locale={params.locale} />
+      <RecordRecentView product={product} locale={locale} />
       <Breadcrumb items={crumbs} />
 
       {/* the reference centres the name and tagline above both columns */}
@@ -67,13 +73,13 @@ export default async function ProductPage({ params }: Params) {
         <h1 className="text-[24px] font-bold leading-snug tracking-tight text-ink-strong lg:text-[30px]">{name}</h1>
         {product.shortDescription && (
           <p className="mx-auto mt-3 max-w-2xl text-[13.5px] leading-relaxed text-ink-soft">
-            {pickLocalized(product.shortDescription, params.locale)}
+            {pickLocalized(product.shortDescription, locale)}
           </p>
         )}
       </header>
 
       <div className="mt-6 flex justify-end lg:mt-8">
-        <ProductShareRow product={product} dict={dict} locale={params.locale} />
+        <ProductShareRow product={product} dict={dict} locale={locale} />
       </div>
 
       <div className="mt-4 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
@@ -145,17 +151,17 @@ export default async function ProductPage({ params }: Params) {
           </dl>
 
           <div className="mt-8">
-            <PurchasePanel product={product} delivery={delivery} locale={params.locale} dict={dict} />
+            <PurchasePanel product={product} delivery={delivery} locale={locale} dict={dict} />
           </div>
         </div>
       </div>
 
-      <ProductTabs product={product} locale={params.locale} dict={dict} />
+      <ProductTabs product={product} locale={locale} dict={dict} />
 
       {related.length > 0 && (
         <section className="mt-16 lg:mt-24">
           <HomeSectionHeader title={dict.product.related} centered />
-          <ProductCarousel products={related} locale={params.locale} dict={dict} />
+          <ProductCarousel products={related} locale={locale} dict={dict} />
         </section>
       )}
     </div>
