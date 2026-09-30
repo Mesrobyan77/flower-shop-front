@@ -1,0 +1,23 @@
+# Build-context hygiene: only sources, lockfiles and tracked public assets belong
+# in the image. A local `node_modules` is installed for the developer's host
+# platform, so letting it into the build would mix Windows binaries into a Linux
+# image (and drag ~400 MB of unused packages along with it).
+node_modules
+.next
+
+# Local state, secrets and tooling metadata.
+.git
+.gitignore
+.env
+.env.*
+*.log
+coverage
+tsconfig.tsbuildinfo
+
+# Untracked seed photography (~47 MB) is reproducible with
+# scripts/fetch-seed-photos.mjs; the tracked .svg placeholders stay included.
+public/images/seed/*.jpg
+
+# The image definition itself is not needed inside the build.
+Dockerfile
+.dockerignore
