@@ -1,12 +1,15 @@
+import { notFound } from 'next/navigation';
 import { serverGet } from '@/lib/api/client';
-import { getDictionary, localePath, type Locale } from '@/lib/i18n';
+import { getDictionary, isLocale, localePath, type Locale } from '@/lib/i18n';
 import { PageShell } from '@/components/layout/PageShell';
 import { formatNumber } from '@/lib/utils';
 import type { StoreSettings } from '@/types';
 
 export const revalidate = 600;
 
-export default async function AwardsPage({ params }: { params: { locale: Locale } }) {
+export default async function AwardsPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const dict = getDictionary(params.locale);
   const settings = await serverGet<StoreSettings>('/settings');
   const counters = settings?.counters ?? { reviews: 0, deliveries: 0, awardYears: 0 };

@@ -1,13 +1,16 @@
-import { getDictionary, localePath, type Locale } from '@/lib/i18n';
+import { notFound } from 'next/navigation';
+import { getDictionary, isLocale, localePath, type Locale } from '@/lib/i18n';
 import { CatalogView } from '@/components/product/CatalogView';
 
-export default function SearchPage({
-  params,
-  searchParams,
-}: {
-  params: { locale: Locale };
-  searchParams: { q?: string };
-}) {
+export default async function SearchPage(
+  props: {
+    params: Promise<{ locale: string }>;
+    searchParams: Promise<{ q?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const dict = getDictionary(params.locale);
   const term = searchParams.q ?? '';
 

@@ -1,14 +1,18 @@
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { serverGet } from '@/lib/api/client';
-import { getDictionary, localePath, pickLocalized, type Locale } from '@/lib/i18n';
+import { getDictionary, isLocale, localePath, pickLocalized, type Locale } from '@/lib/i18n';
 import { PageShell } from '@/components/layout/PageShell';
 import { ClockIcon, MailIcon, PhoneIcon } from '@/components/ui/Icons';
 import type { StoreSettings } from '@/types';
 
 export const revalidate = 600;
 
-export default async function SupportPage({ params }: { params: { locale: Locale } }) {
-  const dict = getDictionary(params.locale);
+export default async function SupportPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
+  const { locale } = params;
+  const dict = getDictionary(locale);
   const settings = await serverGet<StoreSettings>('/settings');
   const contact = settings?.contact;
 
@@ -20,13 +24,13 @@ export default async function SupportPage({ params }: { params: { locale: Locale
   ];
 
   return (
-    <PageShell locale={params.locale} dict={dict} title={dict.support.title}>
+    <PageShell locale={locale} dict={dict} title={dict.support.title}>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid gap-3 sm:grid-cols-2">
           {links.map((link) => (
             <Link
               key={link.href}
-              href={localePath(params.locale, link.href)}
+              href={localePath(locale, link.href)}
               className="rounded-tile border border-line px-5 py-6 text-[14px] font-medium text-ink transition-colors duration-fast hover:border-brand hover:text-brand"
             >
               {link.label}
@@ -44,7 +48,7 @@ export default async function SupportPage({ params }: { params: { locale: Locale
           </a>
           <p className="mt-3 flex items-center gap-1.5 text-[12px] text-ink-soft">
             <ClockIcon className="h-3.5 w-3.5" />
-            {pickLocalized(contact?.hours, params.locale)}
+            {pickLocalized(contact?.hours, locale)}
           </p>
           {contact?.email && (
             <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-ink-soft">

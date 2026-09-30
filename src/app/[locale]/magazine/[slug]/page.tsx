@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { serverGet } from '@/lib/api/client';
-import { getDictionary, localePath, pickLocalized, type Locale } from '@/lib/i18n';
+import { getDictionary, isLocale, localePath, pickLocalized, type Locale } from '@/lib/i18n';
 import { PageShell } from '@/components/layout/PageShell';
 import { formatDate } from '@/lib/utils';
 import type { Post } from '@/types';
@@ -10,10 +10,12 @@ import type { Post } from '@/types';
 export const revalidate = 300;
 
 interface Params {
-  params: { locale: Locale; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }
 
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
+export async function generateMetadata(props: Params): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const post = await serverGet<Post>(`/posts/${params.slug}`);
   if (!post) return {};
   return {
@@ -22,7 +24,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-export default async function MagazineArticlePage({ params }: Params) {
+export default async function MagazineArticlePage(props: Params) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const dict = getDictionary(params.locale);
   const post = await serverGet<Post>(`/posts/${params.slug}`);
   if (!post) notFound();

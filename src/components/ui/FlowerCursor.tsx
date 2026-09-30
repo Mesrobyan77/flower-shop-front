@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface Particle {
   x: number;
@@ -15,13 +16,18 @@ interface Particle {
   fadeSpeed: number;
 }
 
-// Քո նախընտրած Emoji ծաղիկների ցանկը
-const FLOWERS = ['🌸', '🌺', '🌼', '💐', '🥀', '🌻', '🌷', '🌹',''];
+const FLOWERS = ['🌸', '🌺', '🌼', '💐', '🥀', '🌻', '🌷', '🌹', ''];
 
 export default function FlowerCursor() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const pathname = usePathname();
+
+  const isAdminRoute = pathname?.startsWith('/admin');
 
   useEffect(() => {
+    // Եթե admin route է, ոչ մի listener կամ animation frame չենք սկսում
+    if (isAdminRoute) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -31,11 +37,9 @@ export default function FlowerCursor() {
     let animationFrameId: number;
     let particles: Particle[] = [];
 
-    // Մկնիկի ճշգրիտ դիրքը (Inner Dot-ի համար)
     let mouseX = -100;
     let mouseY = -100;
 
-    // Սահուն հետևող օղակի դիրքը (Outer Ring-ի համար)
     let ringX = -100;
     let ringY = -100;
 
@@ -43,7 +47,6 @@ export default function FlowerCursor() {
     let lastY = 0;
     let lastTime = 0;
 
-    // 1. Emoji-ները փոխարկում ենք cached Canvas Image-ների (առանց SVG սխալի)
     const cachedImages: HTMLCanvasElement[] = [];
     FLOWERS.forEach((emoji) => {
       const offCanvas = document.createElement('canvas');
@@ -72,7 +75,6 @@ export default function FlowerCursor() {
       mouseY = e.clientY;
 
       const now = performance.now();
-      // Throttle՝ FPS drop-ից խուսափելու համար
       if (now - lastTime < 25) return;
 
       const dist = Math.hypot(e.clientX - lastX, e.clientY - lastY);
@@ -87,10 +89,10 @@ export default function FlowerCursor() {
         particles.push({
           x: e.clientX,
           y: e.clientY,
-          size: Math.random() * 16 + 22, // Ծաղիկների չափսը (22px - 38px)
+          size: Math.random() * 16 + 22,
           imgIndex,
           vx: (Math.random() - 0.5) * 2.8,
-          vy: -(Math.random() * 2.5 + 2.2), // Թռիչք դեպի վեր
+          vy: -(Math.random() * 2.5 + 2.2),
           rotation: Math.random() * Math.PI * 2,
           vRot: (Math.random() - 0.5) * 0.08,
           opacity: 1,
@@ -101,7 +103,7 @@ export default function FlowerCursor() {
 
     window.addEventListener('mousemove', handleMouseMove);
 
-    const gravity = 0.12; // Ծանրության ուժ
+    const gravity = 0.12;
 
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -133,26 +135,23 @@ export default function FlowerCursor() {
         }
       }
 
-      // 2. Նկարում ենք CUSTOM CURSOR-ը (Կենտրոնի կետ + Արտաքին օղակ)[cite: 8]
+      // 2. Custom Cursor
       if (mouseX > 0 && mouseY > 0) {
-        // Արտաքին օղակի սահուն հետևում (Lerp)
         ringX += (mouseX - ringX) * 0.2;
         ringY += (mouseY - ringY) * 0.2;
 
-        // Ա) Արտաքին մեծ, բարակ օղակը[cite: 8]
         ctx.save();
         ctx.beginPath();
         ctx.arc(ringX, ringY, 18, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(163, 72, 94, 0.5)'; // Փոշոտ-վարդագույն / Բուրգունդի
+        ctx.strokeStyle = 'rgba(163, 72, 94, 0.5)';
         ctx.lineWidth = 1.5;
         ctx.stroke();
         ctx.restore();
 
-        // Բ) Կենտրոնական լեցուն կետը[cite: 8]
         ctx.save();
         ctx.beginPath();
         ctx.arc(mouseX, mouseY, 4.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#a3485e'; // Մուգ վարդագույն
+        ctx.fillStyle = '#a3485e';
         ctx.fill();
         ctx.restore();
       }
@@ -167,7 +166,11 @@ export default function FlowerCursor() {
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [isAdminRoute]);
+
+  if (isAdminRoute) {
+    return null;
+  }
 
   return (
     <canvas

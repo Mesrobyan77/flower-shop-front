@@ -1,11 +1,14 @@
+import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { getDictionary, type Locale } from '@/lib/i18n';
+import { getDictionary, isLocale, type Locale } from '@/lib/i18n';
 import { LoginForm } from '@/components/account/AuthForms';
 import { Skeleton } from '@/components/ui/Feedback';
 
 export const metadata = { title: 'Sign in' };
 
-export default function LoginPage({ params }: { params: { locale: Locale } }) {
+export default async function LoginPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const dict = getDictionary(params.locale);
 
   return (

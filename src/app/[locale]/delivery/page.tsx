@@ -1,5 +1,6 @@
+import { notFound } from 'next/navigation';
 import { serverGet } from '@/lib/api/client';
-import { getDictionary, type Locale } from '@/lib/i18n';
+import { getDictionary, isLocale, type Locale } from '@/lib/i18n';
 import { PageShell } from '@/components/layout/PageShell';
 import { TruckIcon, ClockIcon, CheckIcon } from '@/components/ui/Icons';
 import { formatPrice } from '@/lib/utils';
@@ -7,7 +8,9 @@ import type { AppConfig } from '@/types';
 
 export const revalidate = 600;
 
-export default async function DeliveryPage({ params }: { params: { locale: Locale } }) {
+export default async function DeliveryPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const dict = getDictionary(params.locale);
   const config = await serverGet<AppConfig>('/config');
 

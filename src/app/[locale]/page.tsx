@@ -1,5 +1,6 @@
+import { notFound } from 'next/navigation';
 import { serverGet, serverGetPaged } from '@/lib/api/client';
-import { getDictionary, localePath, pickLocalized, type Locale } from '@/lib/i18n';
+import { getDictionary, isLocale, localePath, pickLocalized, type Locale } from '@/lib/i18n';
 import { ProductCarousel } from '@/components/product/ProductCard';
 import { HeroSlider } from '@/components/home/HeroSlider';
 import { CollectionTabs } from '@/components/home/CollectionTabs';
@@ -19,7 +20,9 @@ import type { Collection, Post, Product, StoreSettings } from '@/types';
 
 export const revalidate = 120;
 
-export default async function HomePage({ params }: { params: { locale: Locale } }) {
+export default async function HomePage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const locale = params.locale;
   const dict = getDictionary(locale);
 

@@ -1,10 +1,13 @@
-import { getDictionary, localePath, type Locale } from '@/lib/i18n';
+import { notFound } from 'next/navigation';
+import { getDictionary, isLocale, localePath, type Locale } from '@/lib/i18n';
 import { Breadcrumb } from '@/components/ui/Display';
 import { CartView } from '@/components/cart/CartView';
 
 export const metadata = { title: 'Cart' };
 
-export default function CartPage({ params }: { params: { locale: Locale } }) {
+export default async function CartPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const dict = getDictionary(params.locale);
 
   return (

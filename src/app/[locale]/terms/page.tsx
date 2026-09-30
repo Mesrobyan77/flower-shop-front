@@ -1,7 +1,10 @@
-import { getDictionary, type Locale } from '@/lib/i18n';
+import { notFound } from 'next/navigation';
+import { getDictionary, isLocale, type Locale } from '@/lib/i18n';
 import { PageShell, InfoBlocks } from '@/components/layout/PageShell';
 
-export default function TermsPage({ params }: { params: { locale: Locale } }) {
+export default async function TermsPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
+  if (!isLocale(params.locale)) notFound();
   const dict = getDictionary(params.locale);
 
   return (
