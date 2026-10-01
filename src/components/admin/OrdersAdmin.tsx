@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { formatDate, formatPrice } from '@/lib/utils';
 import { defaultLocale, getDictionary } from '@/lib/i18n';
 import { adminApi } from '@/lib/api/admin';
@@ -11,7 +11,7 @@ import { useUiStore } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { EmptyState, Pagination, Skeleton } from '@/components/ui/Feedback';
-import { OrderStatusBadge, OrderTimeline, PaymentStatusBadge } from '@/components/account/OrderPieces';
+import { OrderStatusBadge, OrderTimeline, PaymentStatusBadge, PAYMENT_STATUS_KEY } from '@/components/account/OrderPieces';
 import { AdminCard, AdminPageHeader, AdminTable } from './AdminShell';
 import type { OrderStatus, PaymentStatus } from '@/types';
 
@@ -24,6 +24,8 @@ const STATUSES: OrderStatus[] = [
   'completed',
   'cancelled',
 ];
+
+const PAYMENT_STATUSES: PaymentStatus[] = ['pending', 'paid', 'failed', 'cancelled', 'refunded'];
 
 /** Order queue: search, status filter, and a one-click move along the flow. */
 export function OrdersAdmin() {
@@ -168,7 +170,14 @@ export function OrderDetailAdmin({ id }: { id: string }) {
       invalidate();
       notify(dict.common.save, 'success');
     },
+    onError: (error: Error) => notify(error.message, 'error'),
   });
+
+  const serverNote = order?.adminNote ?? '';
+
+  useEffect(() => {
+    setNote(serverNote);
+  }, [order?.id, serverNote]);
 
   if (isLoading) return <Skeleton className="h-96 w-full" />;
   if (!order) return <EmptyState title={dict.common.error} />;
@@ -321,29 +330,24 @@ export function OrderDetailAdmin({ id }: { id: string }) {
           <AdminCard>
             <p className="mb-3 text-[13px] font-semibold text-ink-strong">{dict.admin.changePayment}</p>
             <div className="flex flex-wrap gap-2">
-              {(['pending', 'paid', 'refunded'] as PaymentStatus[]).map((value) => (
+              {PAYMENT_STATUSES.map((value) => (
                 <Button
                   key={value}
                   size="sm"
                   variant={order.paymentStatus === value ? 'primary' : 'outline'}
                   onClick={() => changePayment.mutate(value)}
                 >
-                  {value === 'paid'
-                    ? dict.status.paymentPaid
-                    : value === 'refunded'
-                      ? dict.status.paymentRefunded
-                      : dict.status.paymentPending}
+                  {dict.status[PAYMENT_STATUS_KEY[value]]}
                 </Button>
               ))}
             </div>
-            <p className="mt-3 text-[11.5px] leading-relaxed text-ink-faint">{dict.checkout.cashOnDeliveryHint}</p>
           </AdminCard>
 
           <AdminCard>
             <Textarea
               id="admin-note"
               label={dict.checkout.notes}
-              defaultValue={order.adminNote ?? ''}
+              value={note}
               onChange={(event) => setNote(event.target.value)}
             />
             <Button className="mt-3" size="md" fullWidth loading={saveNote.isPending} onClick={() => saveNote.mutate()}>

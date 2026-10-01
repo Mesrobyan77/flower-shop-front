@@ -32,6 +32,8 @@ export function ProductCard({ product, locale, dict, priority, className, varian
   const name = pickLocalized(product.name, locale);
   const image = product.thumbnail ?? product.images?.[0]?.url;
   const discounted = product.compareAtPrice && product.compareAtPrice > product.price;
+  const showAvailable = product.trackStock && product.stock > 0;
+  const outOfStock = product.trackStock && product.stock === 0;
 
   return (
     <article className={cn('group flex flex-col', className)}>
@@ -53,6 +55,11 @@ export function ProductCard({ product, locale, dict, priority, className, varian
             />
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-brand-50 to-surface-soft" />
+          )}
+          {outOfStock && (
+            <span className="absolute bottom-2 left-2 rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-danger-soft shadow-sm">
+              {dict.product.outOfStock}
+            </span>
           )}
         </div>
 
@@ -83,8 +90,13 @@ export function ProductCard({ product, locale, dict, priority, className, varian
         </p>
       )}
 
-      {(product.soldCount > 0 || product.ratingCount > 0) && (
+      {(showAvailable || product.soldCount > 0 || product.ratingCount > 0) && (
         <p className="mt-1.5 flex flex-wrap gap-x-3 text-[11.5px] text-ink-faint">
+          {showAvailable && (
+            <span>
+              {dict.product.available}: {formatNumber(product.stock)}
+            </span>
+          )}
           {product.soldCount > 0 && (
             <span>
               {dict.product.soldShort} {formatNumber(product.soldCount)}

@@ -228,6 +228,7 @@ export function CollectionsAdmin() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Collection | null>(null);
+  const [toDelete, setToDelete] = useState<Collection | null>(null);
   const [form, setForm] = useState({
     title: empty(),
     subtitle: empty(),
@@ -249,7 +250,7 @@ export function CollectionsAdmin() {
       ),
       showOnHome: collection.showOnHome,
       order: collection.order,
-      isActive: true,
+      isActive: collection.isActive ?? true,
     });
     setOpen(true);
   };
@@ -271,6 +272,15 @@ export function CollectionsAdmin() {
       client.invalidateQueries({ queryKey: qk.adminCollections });
       setOpen(false);
       notify(dict.common.save, 'success');
+    },
+    onError: (error: Error) => notify(error.message, 'error'),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => adminApi.deleteCollection(id),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: qk.adminCollections });
+      notify(dict.common.delete, 'success');
     },
     onError: (error: Error) => notify(error.message, 'error'),
   });
@@ -308,7 +318,7 @@ export function CollectionsAdmin() {
             <td className="px-4 py-3">
               <button
                 type="button"
-                onClick={() => adminApi.deleteCollection(collection.id).then(() => client.invalidateQueries({ queryKey: qk.adminCollections }))}
+                onClick={() => setToDelete(collection)}
                 aria-label={dict.common.delete}
                 className="text-ink-faint hover:text-danger-soft"
               >
@@ -379,6 +389,20 @@ export function CollectionsAdmin() {
           />
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        title={dict.common.delete}
+        message={toDelete ? pickLocalized(toDelete.title, defaultLocale) : ''}
+        confirmLabel={dict.common.delete}
+        cancelLabel={dict.common.cancel}
+        tone="danger"
+        onCancel={() => setToDelete(null)}
+        onConfirm={() => {
+          if (toDelete) remove.mutate(toDelete.id);
+          setToDelete(null);
+        }}
+      />
     </div>
   );
 }
@@ -388,6 +412,7 @@ export function CollectionsAdmin() {
 export function UsersAdmin() {
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
+  const notify = useUiStore((s) => s.notify);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
 
@@ -396,7 +421,11 @@ export function UsersAdmin() {
 
   const setRole = useMutation({
     mutationFn: ({ id, role }: { id: string; role: 'user' | 'admin' }) => adminApi.setUserRole(id, role),
-    onSuccess: () => client.invalidateQueries({ queryKey: ['admin-users'] }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['admin-users'] });
+      notify(dict.common.save, 'success');
+    },
+    onError: (error: Error) => notify(error.message, 'error'),
   });
 
   return (
@@ -456,6 +485,7 @@ export function UsersAdmin() {
 export function ReviewsAdmin() {
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
+  const notify = useUiStore((s) => s.notify);
   const [page, setPage] = useState(1);
 
   const params = { page };
@@ -463,7 +493,11 @@ export function ReviewsAdmin() {
 
   const approve = useMutation({
     mutationFn: ({ id, isApproved }: { id: string; isApproved: boolean }) => adminApi.setReviewApproval(id, isApproved),
-    onSuccess: () => client.invalidateQueries({ queryKey: ['admin-reviews'] }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['admin-reviews'] });
+      notify(dict.common.save, 'success');
+    },
+    onError: (error: Error) => notify(error.message, 'error'),
   });
 
   if (isLoading) return <Skeleton className="h-64 w-full" />;
@@ -622,6 +656,7 @@ export function PostsAdmin() {
   const [type, setType] = useState<PostType | ''>('');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Post | null>(null);
+  const [toDelete, setToDelete] = useState<Post | null>(null);
 
   const params = { page, type: type || undefined };
   const { data, isLoading } = useQuery({ queryKey: qk.adminPosts(params), queryFn: () => adminApi.posts(params) });
@@ -644,7 +679,7 @@ export function PostsAdmin() {
       excerpt: { ...empty(), ...editing.excerpt },
       body: { ...empty(), ...editing.body },
       cover: editing.coverImage ? [editing.coverImage] : [],
-      isPublished: true,
+      isPublished: editing.isPublished ?? true,
       isPinned: editing.isPinned,
     });
   }, [editing]);
@@ -667,6 +702,15 @@ export function PostsAdmin() {
       setOpen(false);
       setEditing(null);
       notify(dict.common.save, 'success');
+    },
+    onError: (error: Error) => notify(error.message, 'error'),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => adminApi.deletePost(id),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['admin-posts'] });
+      notify(dict.common.delete, 'success');
     },
     onError: (error: Error) => notify(error.message, 'error'),
   });
@@ -732,9 +776,7 @@ export function PostsAdmin() {
                 <td className="px-4 py-3">
                   <button
                     type="button"
-                    onClick={() =>
-                      adminApi.deletePost(post.id).then(() => client.invalidateQueries({ queryKey: ['admin-posts'] }))
-                    }
+                    onClick={() => setToDelete(post)}
                     aria-label={dict.common.delete}
                     className="text-ink-faint hover:text-danger-soft"
                   >
@@ -803,6 +845,20 @@ export function PostsAdmin() {
           />
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        title={dict.common.delete}
+        message={toDelete ? pickLocalized(toDelete.title, defaultLocale) : ''}
+        confirmLabel={dict.common.delete}
+        cancelLabel={dict.common.cancel}
+        tone="danger"
+        onCancel={() => setToDelete(null)}
+        onConfirm={() => {
+          if (toDelete) remove.mutate(toDelete.id);
+          setToDelete(null);
+        }}
+      />
     </div>
   );
 }

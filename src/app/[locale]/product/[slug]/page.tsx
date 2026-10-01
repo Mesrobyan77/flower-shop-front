@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { serverGet } from '@/lib/api/client';
 import { getDictionary, isLocale, localePath, pickLocalized, type Locale } from '@/lib/i18n';
+import { buildPageMetadata } from '@/lib/seo';
+import { breadcrumbSchema, productSchema } from '@/lib/structured-data';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { formatNumber } from '@/lib/utils';
 import { Breadcrumb } from '@/components/ui/Display';
 import { Rating } from '@/components/ui/Feedback';
@@ -28,17 +31,16 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
   if (!data) return {};
 
   const name = pickLocalized(data.product.name, locale);
-  const description = pickLocalized(data.product.shortDescription, locale);
+  const description =
+    pickLocalized(data.product.shortDescription, locale) || pickLocalized(data.product.description, locale);
 
-  return {
+  return buildPageMetadata({
+    locale,
+    path: `/product/${params.slug}`,
     title: name,
-    description,
-    openGraph: {
-      title: name,
-      description,
-      images: data.product.thumbnail ? [{ url: data.product.thumbnail }] : undefined,
-    },
-  };
+    description: description || undefined,
+    images: data.product.thumbnail ? [data.product.thumbnail] : undefined,
+  });
 }
 
 export default async function ProductPage(props: Params) {
@@ -65,6 +67,15 @@ export default async function ProductPage(props: Params) {
 
   return (
     <div className="mx-auto w-full max-w-[1292px] px-4 py-6 lg:py-10">
+      <JsonLd
+        data={[
+          productSchema(product, locale, localePath(locale, `/product/${product.slug}`), dict.meta.siteName),
+          breadcrumbSchema([
+            ...crumbs.map((crumb) => ({ name: crumb.label, path: crumb.href })),
+            { name, path: localePath(locale, `/product/${product.slug}`) },
+          ]),
+        ]}
+      />
       <RecordRecentView product={product} locale={locale} />
       <Breadcrumb items={crumbs} />
 
@@ -142,6 +153,18 @@ export default async function ProductPage(props: Params) {
                     ({formatNumber(product.ratingCount)} {dict.product.reviewsShort})
                   </span>
                 </span>
+              </SpecRow>
+            )}
+
+            {product.trackStock && (
+              <SpecRow label={dict.product.availability}>
+                {product.stock > 0 ? (
+                  <span className="font-medium text-ink">
+                    {dict.product.available}: {formatNumber(product.stock)}
+                  </span>
+                ) : (
+                  <span className="font-semibold text-danger-soft">{dict.product.outOfStock}</span>
+                )}
               </SpecRow>
             )}
 

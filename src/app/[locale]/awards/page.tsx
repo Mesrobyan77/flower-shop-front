@@ -1,11 +1,26 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { serverGet } from '@/lib/api/client';
 import { getDictionary, isLocale, localePath, type Locale } from '@/lib/i18n';
+import { buildPageMetadata } from '@/lib/seo';
 import { PageShell } from '@/components/layout/PageShell';
 import { formatNumber } from '@/lib/utils';
 import type { StoreSettings } from '@/types';
 
 export const revalidate = 600;
+
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) return {};
+  const dict = getDictionary(params.locale);
+  // The page's own H1 is dict.support.about, so the metadata title matches it.
+  return buildPageMetadata({
+    locale: params.locale,
+    path: '/awards',
+    title: dict.support.about,
+    description: dict.meta.description,
+  });
+}
 
 export default async function AwardsPage(props: { params: Promise<{ locale: string }> }) {
   const params = await props.params;

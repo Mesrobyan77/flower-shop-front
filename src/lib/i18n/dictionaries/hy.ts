@@ -111,6 +111,8 @@ export const hy = {
     addToCart: 'Ավելացնել զամբյուղ',
     buyNow: 'Գնել հիմա',
     outOfStock: 'Առկա չէ',
+    availability: 'Առկայություն',
+    available: 'Առկա է',
     tabDescription: 'Նկարագրություն',
     tabReviews: 'Կարծիքներ',
     tabInquiries: 'Հարցեր',
@@ -215,6 +217,20 @@ export const hy = {
     newAddress: 'Նոր հասցե',
     orderSummary: 'Պատվերի ամփոփում',
     processing: 'Ձևակերպվում է…',
+    selectedOnProduct: 'Ապրանքի էջում արդեն ընտրված է',
+    paymentMethod: 'Վճարման եղանակ',
+    paymentCash: 'Կանխիկ',
+    paymentIdram: 'Idram',
+    paymentCard: 'Քարտ',
+    idramHint: 'Դուք կտեղափոխվեք Idram-ի անվտանգ վճարման էջ։',
+    cardHint: 'Դուք կտեղափոխվեք քարտային վճարման անվտանգ էջ։',
+    paymentUnavailable: 'Ժամանակավորապես անհասանելի է',
+    redirecting: 'Փոխանցվում է վճարման էջ…',
+    requiredFieldsToast: 'Խնդրում ենք լրացնել պարտադիր դաշտերը։',
+    errorGeneric: 'Ինչ-որ բան սխալ գնաց։ Փորձեք կրկին։',
+    providerUnavailable: 'Վճարման այս եղանակը ժամանակավորապես անհասանելի է։ Խնդրում ենք ընտրել այլ եղանակ։',
+    paymentNotStarted: 'Պատվերը ստեղծված է, սակայն վճարման էջը չհաջողվեց բացել։ Փորձեք կրկին։',
+    retryPayment: 'Կրկնել վճարումը',
   },
 
   orderComplete: {
@@ -229,6 +245,22 @@ export const hy = {
     step4: 'Վճարում եք կանխիկ՝ ստանալու պահին',
     viewOrder: 'Տեսնել պատվերը',
     backHome: 'Դեպի գլխավոր',
+  },
+
+  paymentReturn: {
+    title: 'Վճարման կարգավիճակ',
+    processing: 'Ստուգում ենք վճարման կարգավիճակը…',
+    paidTitle: 'Վճարումը հաստատված է',
+    paidHint: 'Մենք ստացել ենք վճարման հաստատումը վճարային համակարգից։',
+    pendingTitle: 'Վճարումը դեռ հաստատված չէ',
+    pendingHint: 'Եթե հենց նոր եք վճարել, հաստատումը կարող է տևել մի քանի րոպե։ Թարմացրեք կարգավիճակը։',
+    failedTitle: 'Վճարումը չհաջողվեց',
+    failedHint: 'Վճարումը չհաջողվեց։ Պատվերը չի հաստատվել որպես վճարված։',
+    cancelledTitle: 'Վճարումը չեղարկված է',
+    cancelledHint: 'Վճարումը չեղարկվեց։ Պատվերը չի հաստատվել որպես վճարված։',
+    refresh: 'Թարմացնել կարգավիճակը',
+    missing: 'Չհաջողվեց գտնել վճարման տվյալները։',
+    orderLabel: 'Պատվեր',
   },
 
   auth: {
@@ -298,6 +330,8 @@ export const hy = {
     paymentPending: 'Չվճարված',
     paymentPaid: 'Վճարված',
     paymentRefunded: 'Վերադարձված',
+    paymentFailed: 'Չհաջողված',
+    paymentCancelled: 'Չեղարկված',
   },
 
   grades: {
@@ -374,6 +408,20 @@ export const hy = {
     privacy: 'Գաղտնիության քաղաքականություն',
   },
 
+  footer: {
+    tagline: 'Ամեն ծաղկեփունջ պատմում է իր պատմությունը։ Մենք ստեղծում ենք ջերմ պահեր՝ թարմ ծաղիկներից կազմված ձևավորումներով։',
+    quickLinks: 'Արագ հղումներ',
+    home: 'Գլխավոր',
+    flowers: 'Ծաղիկներ',
+    contactUs: 'Կապ մեզ հետ',
+    contactTitle: 'Կապ',
+    categoriesTitle: 'Կատեգորիաներ',
+    legalTitle: 'Իրավական',
+    followUs: 'Հետևեք մեզ',
+    paymentsTitle: 'Վճարման մեթոդներ',
+    copyright: 'Բոլոր իրավունքները պաշտպանված են',
+  },
+
   admin: {
     title: 'Ադմին վահանակ',
     dashboard: 'Վահանակ',
@@ -405,8 +453,12 @@ export const hy = {
 
   validation: {
     required: 'Պարտադիր դաշտ',
-    email: 'Մուտքագրեք վավեր էլ. փոստ',
+    email: 'Մուտքագրեք վավեր էլ․ փոստի հասցե',
+    emailRequired: 'Էլ․ փոստի հասցեն պարտադիր է',
     phone: 'Մուտքագրեք վավեր հեռախոսահամար',
+    phoneRequired: 'Հեռախոսահամարը պարտադիր է',
+    deliveryDateRequired: 'Խնդրում ենք ընտրել առաքման ամսաթիվը',
+    deliveryTimeRequired: 'Խնդրում ենք ընտրել առաքման ժամը',
     minLength: 'Չափազանց կարճ է',
     maxLength: 'Չափազանց երկար է',
     passwordMatch: 'Գաղտնաբառերը չեն համընկնում',

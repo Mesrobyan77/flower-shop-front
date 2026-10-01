@@ -48,15 +48,6 @@ export function SideRail({ locale, dict }: { locale: Locale; dict: Dictionary })
               </ul>
             </div>
           )}
-          <button
-            type="button"
-            onClick={() => setShowRecent((v) => !v)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-white text-[10px] font-semibold text-ink-muted shadow-card transition-colors duration-fast hover:border-brand hover:text-brand"
-            aria-expanded={showRecent}
-            aria-label={dict.account.wishlist}
-          >
-            {items.length}
-          </button>
         </div>
       )}
 

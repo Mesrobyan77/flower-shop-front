@@ -95,9 +95,9 @@ export function HeroSlider({
           <div className="mx-auto w-full max-w-[1260px] px-6 lg:pl-[45px] lg:pr-0">
             <div className="pointer-events-none max-w-[640px] text-white">
               {active.title && (
-                <h2 className="text-[27px] font-bold leading-[1.4] drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] lg:text-[39px]">
+                <h1 className="text-[27px] font-bold leading-[1.4] drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] lg:text-[39px]">
                   {pickLocalized(active.title, locale)}
-                </h2>
+                </h1>
               )}
               {active.subtitle && (
                 <p className="mt-1 text-[15px] font-medium leading-[1.4] text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.35)] lg:text-[21px]">

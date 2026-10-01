@@ -4,27 +4,26 @@ import { Providers } from '@/app/providers';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { SideRail } from '@/components/layout/SideRail';
-import { getDictionary, isLocale, localeHtmlLang, locales, type Locale } from '@/lib/i18n';
+import { LocaleHtmlLang } from '@/components/seo/LocaleHtmlLang';
+import { getDictionary, isLocale, locales, normalizeLocale, type Locale } from '@/lib/i18n';
+import { ogLocale } from '@/lib/seo';
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
+/** Title/description defaults only — canonical and alternates belong to each page. */
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
   const dict = getDictionary(params.locale);
   return {
     title: { default: `${dict.meta.siteName} - ${dict.meta.tagline}`, template: `%s | ${dict.meta.siteName}` },
     description: dict.meta.description,
-    alternates: {
-      canonical: `/${params.locale}`,
-      languages: Object.fromEntries(locales.map((l) => [localeHtmlLang[l], `/${l}`])),
-    },
     openGraph: {
       siteName: dict.meta.siteName,
       title: `${dict.meta.siteName} - ${dict.meta.tagline}`,
       description: dict.meta.description,
-      locale: localeHtmlLang[params.locale as Locale] ?? 'hy-AM',
+      locale: ogLocale(normalizeLocale(params.locale)),
       type: 'website',
     },
   };
@@ -49,6 +48,7 @@ export default async function LocaleLayout(
 
   return (
     <Providers>
+      <LocaleHtmlLang locale={locale} />
       <div className="flex min-h-screen flex-col">
         <Header locale={locale} dict={dict} />
         <main className="flex-1">{children}</main>

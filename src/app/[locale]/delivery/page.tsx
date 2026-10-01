@@ -1,12 +1,26 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { serverGet } from '@/lib/api/client';
 import { getDictionary, isLocale, type Locale } from '@/lib/i18n';
+import { buildPageMetadata } from '@/lib/seo';
 import { PageShell } from '@/components/layout/PageShell';
 import { TruckIcon, ClockIcon, CheckIcon } from '@/components/ui/Icons';
 import { formatPrice } from '@/lib/utils';
 import type { AppConfig } from '@/types';
 
 export const revalidate = 600;
+
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) return {};
+  const dict = getDictionary(params.locale);
+  return buildPageMetadata({
+    locale: params.locale,
+    path: '/delivery',
+    title: dict.delivery.title,
+    description: dict.delivery.quickDesc,
+  });
+}
 
 export default async function DeliveryPage(props: { params: Promise<{ locale: string }> }) {
   const params = await props.params;

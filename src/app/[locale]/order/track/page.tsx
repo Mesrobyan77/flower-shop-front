@@ -1,9 +1,18 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { getDictionary, isLocale, localePath, type Locale } from '@/lib/i18n';
 import { Breadcrumb } from '@/components/ui/Display';
 import { GuestOrderLookup } from '@/components/cart/GuestOrderLookup';
 
-export const metadata = { title: 'Order lookup' };
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) return {};
+  const dict = getDictionary(params.locale);
+  return {
+    title: dict.auth.guestLookupTitle,
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function TrackOrderPage(props: { params: Promise<{ locale: string }> }) {
   const params = await props.params;

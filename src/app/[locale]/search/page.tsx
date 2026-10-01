@@ -1,6 +1,18 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { getDictionary, isLocale, localePath, type Locale } from '@/lib/i18n';
 import { CatalogView } from '@/components/product/CatalogView';
+
+/** Internal search results must never be indexed; links inside them stay followable. */
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) return {};
+  const dict = getDictionary(params.locale);
+  return {
+    title: dict.common.search,
+    robots: { index: false, follow: true },
+  };
+}
 
 export default async function SearchPage(
   props: {

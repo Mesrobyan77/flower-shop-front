@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { serverGet } from '@/lib/api/client';
 import { getDictionary, isLocale, localePath, pickLocalized, type Locale } from '@/lib/i18n';
+import { buildPageMetadata } from '@/lib/seo';
 import { PageShell } from '@/components/layout/PageShell';
 import { formatDate } from '@/lib/utils';
 import type { Post } from '@/types';
@@ -18,10 +19,14 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
   if (!isLocale(params.locale)) notFound();
   const post = await serverGet<Post>(`/posts/${params.slug}`);
   if (!post) return {};
-  return {
+  return buildPageMetadata({
+    locale: params.locale,
+    path: `/magazine/${params.slug}`,
     title: pickLocalized(post.title, params.locale),
-    description: pickLocalized(post.excerpt, params.locale),
-  };
+    description: pickLocalized(post.excerpt, params.locale) || undefined,
+    images: post.coverImage ? [post.coverImage] : undefined,
+    type: 'article',
+  });
 }
 
 export default async function MagazineArticlePage(props: Params) {
@@ -31,11 +36,13 @@ export default async function MagazineArticlePage(props: Params) {
   const post = await serverGet<Post>(`/posts/${params.slug}`);
   if (!post) notFound();
 
+  const title = pickLocalized(post.title, params.locale);
+
   return (
     <PageShell
       locale={params.locale}
       dict={dict}
-      title={pickLocalized(post.title, params.locale)}
+      title={title}
       subtitle={pickLocalized(post.excerpt, params.locale)}
       crumbs={[{ label: dict.support.magazine, href: localePath(params.locale, '/magazine') }]}
       narrow

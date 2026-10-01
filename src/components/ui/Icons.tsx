@@ -181,3 +181,45 @@ export const BoltIcon = (props: IconProps) => (
     <path d="M13.2 2L4.6 13.1c-.3.4 0 1 .5 1h5l-1.4 7.4c-.1.6.7.9 1 .4l8.7-11.2c.3-.4 0-1-.5-1h-5l1.4-7.3c.1-.6-.7-.9-1.1-.4z" />
   </svg>
 );
+
+export const InstagramIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <rect x="3" y="3" width="18" height="18" rx="4.5" />
+    <circle cx="12" cy="12" r="3.8" />
+    <path d="M17.2 6.8h.01" />
+  </svg>
+);
+
+export const FacebookIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <path d="M17 3h-3a4 4 0 00-4 4v3.5H7V14h3v7h3.5v-7h3l.5-3.5h-3.5V7.5c0-.6.4-1 1-1H17z" />
+  </svg>
+);
+
+export const YouTubeIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <path d="M21.6 7.2a2.4 2.4 0 00-1.7-1.7C18.4 5.1 12 5.1 12 5.1s-6.4 0-7.9.4a2.4 2.4 0 00-1.7 1.7A25 25 0 002 12a25 25 0 00.4 4.8 2.4 2.4 0 001.7 1.7c1.5.4 7.9.4 7.9.4s6.4 0 7.9-.4a2.4 2.4 0 001.7-1.7A25 25 0 0022 12a25 25 0 00-.4-4.8z" />
+    <path d="M10 15.2V8.8l5.2 3.2z" />
+  </svg>
+);
+
+export const TelegramIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <path d="M22 2l-7 20-4-9-9-4z" />
+    <path d="M22 2L11 13" />
+  </svg>
+);
+
+export const FileIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <path d="M6.5 3.5h7.5l4 4v13H6.5z" />
+    <path d="M14 3.5v4h4" />
+    <path d="M9.5 11.5h5M9.5 15h5" />
+  </svg>
+);
+
+export const ListIcon = (props: IconProps) => (
+  <svg {...base(props)}>
+    <path d="M4.5 6.5h15M4.5 12h15M4.5 17.5h15" />
+  </svg>
+);

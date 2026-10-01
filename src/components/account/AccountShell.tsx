@@ -24,17 +24,17 @@ export function AccountShell({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, hydrated } = useSession();
+  const { user, isAuthenticated, hydrated, booting } = useSession();
   const { data: summary } = useAccountSummary();
   const logout = useLogout(locale);
 
   useEffect(() => {
-    if (hydrated && !isAuthenticated) {
+    if (hydrated && !booting && !isAuthenticated) {
       router.replace(`${localePath(locale, '/login')}?redirect=${encodeURIComponent(pathname)}`);
     }
-  }, [hydrated, isAuthenticated, locale, pathname, router]);
+  }, [hydrated, booting, isAuthenticated, locale, pathname, router]);
 
-  if (!hydrated || !isAuthenticated) {
+  if (!hydrated || booting || !isAuthenticated) {
     return (
       <div className="rail py-10">
         <Skeleton className="h-64 w-full" />

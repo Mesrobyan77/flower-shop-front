@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { cn } from '@/lib/utils';
-import { localePath, type Dictionary, type Locale } from '@/lib/i18n';
+import { isLocale, localePath, type Dictionary, type Locale } from '@/lib/i18n';
 import { ApiClientError } from '@/lib/api/client';
 import { useLogin, useRegister, useSession } from '@/lib/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +15,17 @@ import { Checkbox, Input } from '@/components/ui/Input';
 import { GuestOrderLookup } from '@/components/cart/GuestOrderLookup';
 
 /* --------------------------------- login --------------------------------- */
+
+// Accepts locale-prefixed targets (AccountShell) and bare ones (AdminShell); everything
+// else — including external URLs — is forced through localePath into a same-origin path.
+// Admin routes live outside the [locale] segment, so they must never be locale-prefixed.
+const NON_LOCALIZED_ROOTS = new Set(['admin']);
+
+function resolveRedirectTarget(locale: Locale, target: string): string {
+  const firstSegment = target.startsWith('/') ? target.slice(1).split(/[/?#]/)[0] : '';
+  if (isLocale(firstSegment) || NON_LOCALIZED_ROOTS.has(firstSegment)) return target;
+  return localePath(locale, target);
+}
 
 function loginSchema(dict: Dictionary) {
   return z.object({
@@ -31,7 +42,7 @@ export function LoginForm({ locale, dict }: { locale: Locale; dict: Dictionary }
   const { isAuthenticated, hydrated } = useSession();
   const [tab, setTab] = useState<'member' | 'guest'>('member');
 
-  const redirectTo = params.get('redirect') ?? '/account';
+  const redirectTo = resolveRedirectTarget(locale, params.get('redirect') ?? '/account');
 
   const form = useForm<z.infer<ReturnType<typeof loginSchema>>>({
     resolver: zodResolver(loginSchema(dict)),
@@ -39,14 +50,14 @@ export function LoginForm({ locale, dict }: { locale: Locale; dict: Dictionary }
   });
 
   useEffect(() => {
-    if (hydrated && isAuthenticated) router.replace(localePath(locale, redirectTo));
-  }, [hydrated, isAuthenticated, locale, redirectTo, router]);
+    if (hydrated && isAuthenticated) router.replace(redirectTo);
+  }, [hydrated, isAuthenticated, redirectTo, router]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
       await login.mutateAsync(values);
-      router.replace(localePath(locale, redirectTo));
-      router.refresh();
+      // replace() must stay last: a trailing refresh() supersedes the pending transition.
+      router.replace(redirectTo);
     } catch (error) {
       if (error instanceof ApiClientError) {
         form.setError('password', { message: error.message });

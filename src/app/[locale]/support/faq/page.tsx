@@ -1,11 +1,24 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { serverGetPaged } from '@/lib/api/client';
 import { getDictionary, isLocale, localePath, pickLocalized, type Locale } from '@/lib/i18n';
+import { buildPageMetadata } from '@/lib/seo';
 import { PageShell } from '@/components/layout/PageShell';
 import { Accordion } from '@/components/layout/Accordion';
 import type { Post } from '@/types';
 
 export const revalidate = 600;
+
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) return {};
+  const dict = getDictionary(params.locale);
+  return buildPageMetadata({
+    locale: params.locale,
+    path: '/support/faq',
+    title: dict.support.faq,
+  });
+}
 
 export default async function FaqPage(props: { params: Promise<{ locale: string }> }) {
   const params = await props.params;

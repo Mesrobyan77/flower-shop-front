@@ -1,10 +1,20 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { getDictionary, isLocale, localePath, type Locale } from '@/lib/i18n';
 import { ButtonLink } from '@/components/ui/Button';
 import { CheckIcon, ClockIcon, PhoneIcon, TruckIcon } from '@/components/ui/Icons';
 import { CopyCode } from '@/components/cart/CopyCode';
 
-export const metadata = { title: 'Order confirmed' };
+/** Per-order confirmation pages carry a customer's order number: never index. */
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) return {};
+  const dict = getDictionary(params.locale);
+  return {
+    title: dict.orderComplete.title,
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function OrderCompletePage(
   props: {

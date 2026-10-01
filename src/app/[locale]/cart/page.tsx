@@ -1,9 +1,18 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { getDictionary, isLocale, localePath, type Locale } from '@/lib/i18n';
 import { Breadcrumb } from '@/components/ui/Display';
 import { CartView } from '@/components/cart/CartView';
 
-export const metadata = { title: 'Cart' };
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) return {};
+  const dict = getDictionary(params.locale);
+  return {
+    title: dict.cart.title,
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function CartPage(props: { params: Promise<{ locale: string }> }) {
   const params = await props.params;

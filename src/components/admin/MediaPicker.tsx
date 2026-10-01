@@ -8,7 +8,7 @@ import { defaultLocale, getDictionary } from '@/lib/i18n';
 import { adminApi, type MediaItem } from '@/lib/api/admin';
 import { qk } from '@/lib/queryKeys';
 import { useUiStore } from '@/store/ui';
-import { Modal } from '@/components/ui/Overlay';
+import { ConfirmDialog, Modal } from '@/components/ui/Overlay';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Feedback';
 import { PlusIcon, TrashIcon } from '@/components/ui/Icons';
@@ -92,6 +92,7 @@ export function MediaLibrary({
   const notify = useUiStore((s) => s.notify);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [toDelete, setToDelete] = useState<MediaItem | null>(null);
 
   const params = { page: 1, folder };
   const { data, isLoading } = useQuery({
@@ -113,7 +114,11 @@ export function MediaLibrary({
 
   const remove = useMutation({
     mutationFn: (id: string) => adminApi.deleteMedia(id),
-    onSuccess: () => client.invalidateQueries({ queryKey: ['admin-media'] }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['admin-media'] });
+      notify(dict.common.delete, 'success');
+    },
+    onError: (error: Error) => notify(error.message, 'error'),
   });
 
   const handleFiles = (files: FileList | null) => {
@@ -165,7 +170,7 @@ export function MediaLibrary({
                 </button>
                 <button
                   type="button"
-                  onClick={() => remove.mutate(item.id)}
+                  onClick={() => setToDelete(item)}
                   aria-label={dict.common.delete}
                   className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-ink-soft opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger-soft"
                 >
@@ -182,6 +187,20 @@ export function MediaLibrary({
           {dict.common.close}
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(toDelete)}
+        title={dict.common.delete}
+        message={toDelete ? toDelete.originalName : ''}
+        confirmLabel={dict.common.delete}
+        cancelLabel={dict.common.cancel}
+        tone="danger"
+        onCancel={() => setToDelete(null)}
+        onConfirm={() => {
+          if (toDelete) remove.mutate(toDelete.id);
+          setToDelete(null);
+        }}
+      />
     </Modal>
   );
 }

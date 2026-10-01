@@ -168,7 +168,6 @@ interface FormState {
   sameDayAvailable: boolean;
   minOrderQty: number;
   maxOrderQty: number;
-  order: number;
 }
 
 const EMPTY_FORM: FormState = {
@@ -190,7 +189,6 @@ const EMPTY_FORM: FormState = {
   sameDayAvailable: true,
   minOrderQty: 1,
   maxOrderQty: 20,
-  order: 0,
 };
 
 export function ProductForm({ id }: { id?: string }) {
@@ -231,7 +229,6 @@ export function ProductForm({ id }: { id?: string }) {
       sameDayAvailable: existing.sameDayAvailable,
       minOrderQty: existing.minOrderQty,
       maxOrderQty: existing.maxOrderQty,
-      order: 0,
     });
   }, [existing]);
 
@@ -255,7 +252,6 @@ export function ProductForm({ id }: { id?: string }) {
     sameDayAvailable: form.sameDayAvailable,
     minOrderQty: form.minOrderQty,
     maxOrderQty: form.maxOrderQty,
-    order: form.order,
   });
 
   const save = useMutation({
@@ -423,13 +419,13 @@ export function ProductForm({ id }: { id?: string }) {
               <Checkbox
                 checked={form.trackStock}
                 onChange={(event) => setForm((s) => ({ ...s, trackStock: event.target.checked }))}
-                label="stock"
+                label={dict.product.availability}
               />
               {form.trackStock && (
                 <Input
                   id="product-stock"
                   type="number"
-                  label="stock"
+                  label={dict.product.availability}
                   value={form.stock}
                   onChange={(event) => setForm((s) => ({ ...s, stock: Number(event.target.value) }))}
                 />

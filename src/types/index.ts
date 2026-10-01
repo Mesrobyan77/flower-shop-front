@@ -17,7 +17,9 @@ export type OrderStatus =
   | 'completed'
   | 'cancelled';
 
-export type PaymentStatus = 'pending' | 'paid' | 'refunded';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded';
+export type PaymentMethod = 'cash_on_delivery' | 'idram' | 'arca';
+export type PaymentProvider = 'idram' | 'arca';
 export type UserRole = 'user' | 'admin';
 export type ProductBadge = 'new' | 'best' | 'sale' | 'today' | 'subscription_only';
 export type PostType = 'magazine' | 'notice' | 'faq' | 'event';
@@ -141,6 +143,7 @@ export interface Collection {
   bannerImage?: string;
   products: Product[];
   showOnHome: boolean;
+  isActive?: boolean;
   order: number;
 }
 
@@ -272,13 +275,66 @@ export interface Order {
   pointsUsed: number;
   total: number;
   pointsEarned: number;
-  paymentMethod: 'cash_on_delivery';
+  paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   status: OrderStatus;
   statusHistory: { status: OrderStatus; note?: string; changedAt: string }[];
   customerNote?: string;
   adminNote?: string;
   createdAt: string;
+}
+
+export interface PaymentMethodAvailability {
+  key: PaymentMethod;
+  enabled: boolean;
+}
+
+export interface CheckoutPayment {
+  provider: PaymentProvider;
+  returnToken: string;
+  amount: number;
+  currency: string;
+}
+
+export interface PaymentPublic {
+  provider: PaymentProvider;
+  status: PaymentStatus;
+  amount: number;
+  currency: string;
+  attempts: number;
+}
+
+export interface PaymentOrderSummary {
+  code: string;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  total: number;
+  delivery: {
+    recipient: string;
+    requestedDate?: string;
+    timeSlot?: string;
+    city: string;
+    region: string;
+  };
+}
+
+export interface PaymentStartResult {
+  kind: 'form' | 'url' | 'paid';
+  action?: string;
+  fields?: Record<string, string>;
+  url?: string;
+  payment: PaymentPublic;
+  order: PaymentOrderSummary;
+}
+
+export interface PaymentStatusResponse {
+  payment: PaymentPublic;
+  order: PaymentOrderSummary;
+}
+
+export interface CheckoutResponse {
+  order: Order;
+  payment: CheckoutPayment | null;
 }
 
 export interface Review {
@@ -319,6 +375,7 @@ export interface Post {
   coverImage?: string;
   tags: string[];
   category?: string;
+  isPublished?: boolean;
   isPinned: boolean;
   viewCount: number;
   publishedAt: string;

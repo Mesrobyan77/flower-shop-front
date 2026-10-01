@@ -1,30 +1,55 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-import { cn, formatPrice, todayIso } from '@/lib/utils';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { cn, dateKey, formatPrice, todayIso } from '@/lib/utils';
 import { localePath, type Dictionary, type Locale } from '@/lib/i18n';
 import { ApiClientError } from '@/lib/api/client';
-import { deliveryApi, orderApi, type CheckoutBody } from '@/lib/api/commerce';
+import { deliveryApi, orderApi, paymentApi, type CheckoutBody } from '@/lib/api/commerce';
 import { qk } from '@/lib/queryKeys';
 import { useCart } from '@/lib/hooks/useCart';
 import { useAddresses } from '@/lib/hooks/useAccount';
 import { useAppConfig, useDeliveryOptions } from '@/lib/hooks/useCatalog';
 import { useSession } from '@/lib/hooks/useAuth';
-import { useCheckoutStore } from '@/store/checkout';
+import { redirectToProvider, savePendingPayment } from '@/lib/paymentFlow';
+import { useCheckoutStore, type CheckoutDraft } from '@/store/checkout';
 import { useUiStore } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
 import { Checkbox, Input, Select, Textarea } from '@/components/ui/Input';
 import { EmptyState, Skeleton } from '@/components/ui/Feedback';
 import { ButtonLink } from '@/components/ui/Button';
-import type { DeliveryMethod } from '@/types';
+import type { CheckoutPayment, DeliveryMethod, PaymentMethod } from '@/types';
+
+const EMAIL_RE = /^\S+@\S+\.\S+$/;
+
+/** Maps schema field paths to the DOM ids so the first invalid input can take focus. */
+const FIELD_IDS: Record<string, string> = {
+  'customer.name': 'customer-name',
+  'customer.email': 'customer-email',
+  'customer.phone': 'customer-phone',
+  'delivery.recipient': 'recipient',
+  'delivery.phone': 'recipient-phone',
+  'delivery.city': 'city',
+  'delivery.street': 'street',
+  'delivery.requestedDate': 'requested-date',
+  'delivery.timeSlot': 'time-slot',
+};
+
+const PAYMENT_METHODS: PaymentMethod[] = ['cash_on_delivery', 'idram', 'arca'];
+
+interface PendingPayment {
+  token: string;
+  orderCode: string;
+  provider: CheckoutPayment['provider'];
+  message: string;
+}
 
 /**
  * Checkout mirrors the reference order form: buyer block, recipient block,
- * delivery block, then the summary. Payment is cash on delivery, so there is no
- * gateway step and the confirm button writes the order directly.
+ * delivery block, payment method and the summary. Delivery choices made on the
+ * product page are prefilled and summarised here; validation is app-level and
+ * localized, and online payments leave through the provider-hosted page.
  */
 export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const router = useRouter();
@@ -38,6 +63,8 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
   const { draft, update, reset } = useCheckoutStore();
   const [agree, setAgree] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [starting, setStarting] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(null);
 
   // Prefill from the signed-in profile once, without clobbering typed input.
   useEffect(() => {
@@ -61,12 +88,72 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
     return methods;
   }, [activeRegion]);
 
+  // Wait for the region config before enforcing: until it loads, `allowedMethods`
+  // is only the fallback list and would clobber a persisted "quick" draft on refresh.
   useEffect(() => {
+    if (!config) return;
     if (!allowedMethods.includes(draft.method)) update({ method: allowedMethods[0], timeSlot: '' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allowedMethods.join(',')]);
+  }, [config, allowedMethods.join(',')]);
+
+  /**
+   * Phases 1: honour the delivery choices from the product page. The draft
+   * wins whenever the user already touched a field (including on refresh,
+   * because the draft is persisted), so prefill only fills blanks, once.
+   * Waits for the region config so `allowedMethods` is the real list, not the
+   * pre-load fallback that would drop the product-page delivery choices.
+   */
+  const prefilledRef = useRef(false);
+  useEffect(() => {
+    if (prefilledRef.current || !cart || cart.items.length === 0 || !deliveryOptions || !config) return;
+    prefilledRef.current = true;
+
+    const first = cart.items.find((item) => item.deliveryDate) ?? cart.items[0];
+    if (!first) return;
+
+    const patch: Partial<CheckoutDraft> = {};
+    const itemMethod = first.deliveryMethod;
+    const untouchedDelivery = !draft.requestedDate && !draft.timeSlot;
+    if (untouchedDelivery && itemMethod !== draft.method && allowedMethods.includes(itemMethod)) {
+      patch.method = itemMethod;
+    }
+    const effectiveMethod = patch.method ?? draft.method;
+    const option = deliveryOptions?.methods.find((m) => m.method === effectiveMethod);
+    const validDates = new Set(
+      (option?.calendar ?? []).filter((day) => day.available && day.date >= todayIso()).map((day) => day.date),
+    );
+    const wantedDate = dateKey(first.deliveryDate);
+    if (!draft.requestedDate && wantedDate && validDates.has(wantedDate)) {
+      patch.requestedDate = wantedDate;
+    }
+    if (
+      !draft.timeSlot &&
+      first.timeSlot &&
+      effectiveMethod === 'quick' &&
+      (option?.timeSlots ?? []).includes(first.timeSlot)
+    ) {
+      patch.timeSlot = first.timeSlot;
+    }
+    if (Object.keys(patch).length > 0) update(patch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart, deliveryOptions, config]);
+
+  /** Distinct delivery choices made on the product page, shown read-only. */
+  const productDelivery = useMemo(() => {
+    if (!cart) return [];
+    const rows: { name: string; method: DeliveryMethod; date?: string; slot?: string }[] = [];
+    const seen = new Set<string>();
+    for (const item of cart.items) {
+      const key = `${item.deliveryMethod}|${item.deliveryDate ?? ''}|${item.timeSlot ?? ''}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rows.push({ name: item.product?.name ?? '', method: item.deliveryMethod, date: dateKey(item.deliveryDate) || undefined, slot: item.timeSlot });
+    }
+    return rows;
+  }, [cart]);
 
   const methodOption = deliveryOptions?.methods.find((m) => m.method === draft.method);
+  const timeSlots = methodOption?.timeSlots ?? [];
   const merchandise = cart ? cart.totals.merchandiseTotal - cart.totals.gradeDiscount : 0;
 
   const quote = useQuery({
@@ -75,23 +162,66 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
     enabled: Boolean(draft.region && draft.method && cart),
   });
 
+  const { data: paymentMethods } = useQuery({
+    queryKey: qk.paymentMethods,
+    queryFn: paymentApi.methods,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isPaymentEnabled = (method: PaymentMethod) => {
+    if (method === 'cash_on_delivery') return true;
+    const entry = paymentMethods?.find((item) => item.key === method);
+    return entry ? entry.enabled : true;
+  };
+
+  useEffect(() => {
+    if (!paymentMethods) return;
+    if (draft.paymentMethod !== 'cash_on_delivery' && !isPaymentEnabled(draft.paymentMethod)) {
+      update({ paymentMethod: 'cash_on_delivery' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethods, draft.paymentMethod]);
+
+  const paymentLabel: Record<PaymentMethod, string> = {
+    cash_on_delivery: dict.checkout.paymentCash,
+    idram: dict.checkout.paymentIdram,
+    arca: dict.checkout.paymentCard,
+  };
+  const paymentHint: Record<PaymentMethod, string> = {
+    cash_on_delivery: dict.checkout.cashOnDeliveryHint,
+    idram: dict.checkout.idramHint,
+    arca: dict.checkout.cardHint,
+  };
+
   const maxPoints = Math.min(user?.points ?? 0, merchandise);
   const deliveryTotal = quote.data?.total ?? 0;
   const payable = Math.max(0, merchandise + deliveryTotal - draft.pointsUsed);
 
   const checkout = useMutation({
     mutationFn: (body: CheckoutBody) => orderApi.checkout(body),
-    onSuccess: (order) => {
-      reset();
-      router.push(localePath(locale, `/order/complete/${order.code}`));
+    onSuccess: ({ order, payment }) => {
+      if (!payment) {
+        reset();
+        router.push(localePath(locale, `/order/complete/${order.code}`));
+        return;
+      }
+      void beginPayment({ token: payment.returnToken, orderCode: order.code, provider: payment.provider });
     },
     onError: (error: Error) => {
-      if (error instanceof ApiClientError && error.errors) {
-        const flat: Record<string, string> = {};
-        for (const [key, messages] of Object.entries(error.errors)) flat[key] = messages[0];
-        setErrors(flat);
+      if (error instanceof ApiClientError && error.code === 'PROVIDER_UNAVAILABLE') {
+        notify(dict.checkout.providerUnavailable, 'error');
+        return;
       }
-      notify(error.message, 'error');
+      if (error instanceof ApiClientError && error.errors && Object.keys(error.errors).length > 0) {
+        const local = validate();
+        const mapped: Record<string, string> = {};
+        for (const [key, messages] of Object.entries(error.errors)) mapped[key] = local[key] ?? messages[0];
+        setErrors(mapped);
+        notify(dict.checkout.requiredFieldsToast, 'error');
+        focusFirstError(mapped);
+        return;
+      }
+      notify(dict.checkout.errorGeneric, 'error');
     },
   });
 
@@ -111,27 +241,98 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
     );
   }
 
-  const validate = () => {
+  const validate = (): Record<string, string> => {
     const next: Record<string, string> = {};
     if (draft.customerName.trim().length < 2) next['customer.name'] = dict.validation.required;
-    if (!/^\S+@\S+\.\S+$/.test(draft.customerEmail)) next['customer.email'] = dict.validation.email;
-    if (draft.customerPhone.trim().length < 6) next['customer.phone'] = dict.validation.phone;
+
+    const email = draft.customerEmail.trim();
+    if (!email) next['customer.email'] = dict.validation.emailRequired;
+    else if (!EMAIL_RE.test(email)) next['customer.email'] = dict.validation.email;
+
+    const customerPhone = draft.customerPhone.trim();
+    if (!customerPhone) next['customer.phone'] = dict.validation.phoneRequired;
+    else if (customerPhone.length < 6) next['customer.phone'] = dict.validation.phone;
+
     if (draft.recipient.trim().length < 2) next['delivery.recipient'] = dict.validation.required;
-    if (draft.recipientPhone.trim().length < 6) next['delivery.phone'] = dict.validation.phone;
+
+    const recipientPhone = draft.recipientPhone.trim();
+    if (!recipientPhone) next['delivery.phone'] = dict.validation.phoneRequired;
+    else if (recipientPhone.length < 6) next['delivery.phone'] = dict.validation.phone;
+
     if (!draft.city.trim()) next['delivery.city'] = dict.validation.required;
     if (!draft.street.trim()) next['delivery.street'] = dict.validation.required;
-    if (!draft.requestedDate) next['delivery.requestedDate'] = dict.validation.required;
-    setErrors(next);
-    return Object.keys(next).length === 0;
+    if (!draft.requestedDate) next['delivery.requestedDate'] = dict.validation.deliveryDateRequired;
+    if (draft.method === 'quick' && timeSlots.length > 0 && !draft.timeSlot) {
+      next['delivery.timeSlot'] = dict.validation.deliveryTimeRequired;
+    }
+    if (!isPaymentEnabled(draft.paymentMethod)) next['payment.method'] = dict.checkout.providerUnavailable;
+    return next;
+  };
+
+  const focusFirstError = (fieldErrors: Record<string, string>) => {
+    const key = Object.keys(FIELD_IDS).find((field) => fieldErrors[field]);
+    if (!key) return;
+    const element = document.getElementById(FIELD_IDS[key]);
+    if (!element) return;
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    element.focus({ preventScroll: true });
+  };
+
+  const updateField = (key: string, patch: Partial<CheckoutDraft>) => {
+    update(patch);
+    setErrors((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  /** Creates (or reuses) the payment session and leaves for the provider page. */
+  const beginPayment = async (hint: { token: string; orderCode: string; provider: CheckoutPayment['provider'] }) => {
+    setStarting(true);
+    setPendingPayment({ ...hint, message: '' });
+    savePendingPayment(hint);
+    let navigating = false;
+    try {
+      const result = await paymentApi.start({ token: hint.token, locale });
+      if (result.kind === 'form' || result.kind === 'url') {
+        navigating = true;
+        redirectToProvider(result);
+        return;
+      }
+      reset();
+      router.push(`${localePath(locale, '/checkout/payment/return')}?token=${encodeURIComponent(hint.token)}`);
+    } catch (error) {
+      const message =
+        error instanceof ApiClientError && error.code === 'PROVIDER_UNAVAILABLE'
+          ? dict.checkout.providerUnavailable
+          : dict.checkout.paymentNotStarted;
+      setPendingPayment({ ...hint, message });
+      notify(message, 'error');
+    } finally {
+      if (!navigating) setStarting(false);
+    }
   };
 
   const submit = () => {
+    if (checkout.isPending || starting) return;
+    if (pendingPayment) {
+      void beginPayment(pendingPayment);
+      return;
+    }
     if (!agree) {
       notify(dict.checkout.agreeTerms, 'error');
       return;
     }
-    if (!validate()) return;
-
+    const next = validate();
+    if (Object.keys(next).length > 0) {
+      setErrors(next);
+      notify(dict.checkout.requiredFieldsToast, 'error');
+      focusFirstError(next);
+      return;
+    }
+    setErrors({});
     checkout.mutate({
       customer: { name: draft.customerName, email: draft.customerEmail, phone: draft.customerPhone },
       delivery: {
@@ -151,11 +352,21 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
       customerNote: draft.customerNote || undefined,
       pointsUsed: draft.pointsUsed || 0,
       agreeTerms: true,
+      paymentMethod: draft.paymentMethod,
     });
   };
 
+  const placeOrderBusy = checkout.isPending || starting;
+
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
+    <form
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        submit();
+      }}
+      className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10"
+    >
       <div className="flex flex-col gap-8">
         {isAuthenticated && addresses && addresses.length > 0 && (
           <section>
@@ -207,7 +418,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
               required
               value={draft.customerName}
               error={errors['customer.name']}
-              onChange={(event) => update({ customerName: event.target.value })}
+              onChange={(event) => updateField('customer.name', { customerName: event.target.value })}
             />
             <Input
               id="customer-phone"
@@ -215,7 +426,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
               required
               value={draft.customerPhone}
               error={errors['customer.phone']}
-              onChange={(event) => update({ customerPhone: event.target.value })}
+              onChange={(event) => updateField('customer.phone', { customerPhone: event.target.value })}
             />
             <Input
               id="customer-email"
@@ -225,7 +436,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
               wrapperClassName="sm:col-span-2"
               value={draft.customerEmail}
               error={errors['customer.email']}
-              onChange={(event) => update({ customerEmail: event.target.value })}
+              onChange={(event) => updateField('customer.email', { customerEmail: event.target.value })}
             />
           </div>
         </section>
@@ -239,7 +450,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
               required
               value={draft.recipient}
               error={errors['delivery.recipient']}
-              onChange={(event) => update({ recipient: event.target.value })}
+              onChange={(event) => updateField('delivery.recipient', { recipient: event.target.value })}
             />
             <Input
               id="recipient-phone"
@@ -247,7 +458,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
               required
               value={draft.recipientPhone}
               error={errors['delivery.phone']}
-              onChange={(event) => update({ recipientPhone: event.target.value })}
+              onChange={(event) => updateField('delivery.phone', { recipientPhone: event.target.value })}
             />
             <Select
               id="region"
@@ -268,7 +479,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
               required
               value={draft.city}
               error={errors['delivery.city']}
-              onChange={(event) => update({ city: event.target.value })}
+              onChange={(event) => updateField('delivery.city', { city: event.target.value })}
             />
             <Input
               id="street"
@@ -277,7 +488,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
               wrapperClassName="sm:col-span-2"
               value={draft.street}
               error={errors['delivery.street']}
-              onChange={(event) => update({ street: event.target.value })}
+              onChange={(event) => updateField('delivery.street', { street: event.target.value })}
             />
             <Input
               id="building"
@@ -303,6 +514,24 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
 
         <section>
           <h2 className="mb-4 text-[14px] font-semibold text-ink-strong">{dict.checkout.deliveryInfo}</h2>
+
+          {productDelivery.length > 0 && (
+            <div className="mb-4 rounded-tile border border-line-soft bg-surface-soft/60 px-4 py-3">
+              <p className="text-[12px] font-semibold text-ink-strong">{dict.checkout.selectedOnProduct}</p>
+              <ul className="mt-2 flex flex-col gap-1 text-[11.5px] text-ink-muted">
+                {productDelivery.map((row, index) => (
+                  <li key={index} className="flex flex-wrap justify-between gap-x-3">
+                    <span className="min-w-0 flex-1 truncate">{row.name}</span>
+                    <span className="shrink-0">
+                      {dict.delivery[row.method]}
+                      {row.date ? ` · ${row.date}` : ''}
+                      {row.slot ? ` · ${row.slot}` : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             {allowedMethods.map((method) => (
@@ -337,7 +566,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
               required
               value={draft.requestedDate}
               error={errors['delivery.requestedDate']}
-              onChange={(event) => update({ requestedDate: event.target.value })}
+              onChange={(event) => updateField('delivery.requestedDate', { requestedDate: event.target.value })}
             >
               <option value="">{dict.product.notSelected}</option>
               {(methodOption?.calendar ?? [])
@@ -349,15 +578,17 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
                 ))}
             </Select>
 
-            {draft.method === 'quick' && (
+            {draft.method === 'quick' && timeSlots.length > 0 && (
               <Select
                 id="time-slot"
                 label={dict.checkout.timeSlot}
+                required
                 value={draft.timeSlot}
-                onChange={(event) => update({ timeSlot: event.target.value })}
+                error={errors['delivery.timeSlot']}
+                onChange={(event) => updateField('delivery.timeSlot', { timeSlot: event.target.value })}
               >
                 <option value="">{dict.product.notSelected}</option>
-                {(methodOption?.timeSlots ?? []).map((slot) => (
+                {timeSlots.map((slot) => (
                   <option key={slot} value={slot}>
                     {slot}
                   </option>
@@ -368,10 +599,43 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
         </section>
 
         <section>
-          <h2 className="mb-4 text-[14px] font-semibold text-ink-strong">{dict.checkout.payment}</h2>
-          <div className="rounded-tile border border-brand bg-brand-50/40 px-5 py-4">
-            <p className="text-[13px] font-medium text-brand-700">{dict.checkout.cashOnDelivery}</p>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-ink-muted">{dict.checkout.cashOnDeliveryHint}</p>
+          <h2 className="mb-4 text-[14px] font-semibold text-ink-strong">{dict.checkout.paymentMethod}</h2>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {PAYMENT_METHODS.map((method) => {
+              const enabled = isPaymentEnabled(method);
+              return (
+                <label
+                  key={method}
+                  className={cn(
+                    'flex items-start gap-3 rounded-card border p-3 transition-colors duration-fast',
+                    enabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-60',
+                    draft.paymentMethod === method ? 'border-brand bg-brand-50/50' : 'border-line',
+                    enabled && draft.paymentMethod !== method && 'hover:border-line-strong',
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="checkout-payment"
+                    checked={draft.paymentMethod === method}
+                    disabled={!enabled || Boolean(pendingPayment)}
+                    onChange={() => update({ paymentMethod: method })}
+                    className="mt-0.5 h-4 w-4 accent-brand"
+                  />
+                  <span className="flex-1">
+                    <span className="block text-[13px] font-medium text-ink">{paymentLabel[method]}</span>
+                    <span className="mt-0.5 block text-[11px] leading-snug text-ink-soft">
+                      {enabled ? paymentHint[method] : dict.checkout.paymentUnavailable}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          {errors['payment.method'] && <p className="mt-2 text-[11px] text-danger-soft">{errors['payment.method']}</p>}
+
+          <div className="mt-4 rounded-tile border border-brand bg-brand-50/40 px-5 py-4">
+            <p className="text-[13px] font-medium text-brand-700">{paymentLabel[draft.paymentMethod]}</p>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-ink-muted">{paymentHint[draft.paymentMethod]}</p>
           </div>
 
           {isAuthenticated && maxPoints > 0 && (
@@ -389,7 +653,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
                   update({ pointsUsed: Math.max(0, Math.min(maxPoints, Number(event.target.value) || 0)) })
                 }
               />
-              <Button variant="outline" size="md" onClick={() => update({ pointsUsed: maxPoints })}>
+              <Button type="button" variant="outline" size="md" onClick={() => update({ pointsUsed: maxPoints })}>
                 {dict.common.all}
               </Button>
             </div>
@@ -456,6 +720,15 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
             </p>
           )}
 
+          {pendingPayment?.message && (
+            <div className="mt-4 rounded-card border border-danger-soft/40 bg-danger-soft/5 px-4 py-3">
+              <p className="text-[12px] leading-relaxed text-danger-soft">{pendingPayment.message}</p>
+              <p className="mt-1 text-[11.5px] text-ink-muted">
+                {dict.paymentReturn.orderLabel}: {pendingPayment.orderCode}
+              </p>
+            </div>
+          )}
+
           <Checkbox
             className="mt-5"
             checked={agree}
@@ -464,17 +737,23 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
           />
 
           <Button
+            type="submit"
             size="xl"
             fullWidth
             className="mt-4"
-            onClick={submit}
-            loading={checkout.isPending}
-            disabled={!agree || checkout.isPending}
+            loading={placeOrderBusy}
+            disabled={placeOrderBusy}
           >
-            {checkout.isPending ? dict.checkout.processing : dict.checkout.placeOrder}
+            {checkout.isPending
+              ? dict.checkout.processing
+              : starting
+                ? dict.checkout.redirecting
+                : pendingPayment
+                  ? dict.checkout.retryPayment
+                  : dict.checkout.placeOrder}
           </Button>
         </div>
       </aside>
-    </div>
+    </form>
   );
 }

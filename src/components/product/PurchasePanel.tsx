@@ -57,7 +57,8 @@ export function PurchasePanel({ product, delivery, locale, dict }: PurchasePanel
   const total = (product.price + addonTotal) * quantity;
 
   const missingDate = !date;
-  const canSubmit = !missingDate && !addToCart.isPending;
+  const isOutOfStock = product.trackStock && product.stock === 0;
+  const busy = addToCart.isPending || isOutOfStock;
 
   const buildPayload = () => ({
     productId: product.id,
@@ -82,7 +83,10 @@ export function PurchasePanel({ product, delivery, locale, dict }: PurchasePanel
   const submit = async (goToCart: boolean) => {
     setTouched(true);
     if (missingDate) {
-      notify(dict.product.selectOptionFirst, 'error');
+      notify(dict.validation.deliveryDateRequired, 'error');
+      const field = document.getElementById('delivery-date');
+      field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      field?.focus({ preventScroll: true });
       return;
     }
 
@@ -158,7 +162,9 @@ export function PurchasePanel({ product, delivery, locale, dict }: PurchasePanel
             </option>
           ))}
         </select>
-        {touched && missingDate && <p className="mt-1 text-[11px] text-danger-soft">{dict.validation.required}</p>}
+        {touched && missingDate && (
+          <p className="mt-1 text-[11px] text-danger-soft">{dict.validation.deliveryDateRequired}</p>
+        )}
       </section>
 
       {/* time slot - quick only, exactly as the reference restricted it */}
@@ -281,18 +287,17 @@ export function PurchasePanel({ product, delivery, locale, dict }: PurchasePanel
         </span>
       </section>
 
+      {isOutOfStock && (
+        <p className="rounded-card border border-danger-soft px-4 py-3 text-center text-[12.5px] font-semibold text-danger-soft">
+          {dict.product.outOfStock}
+        </p>
+      )}
+
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="xl"
-          fullWidth
-          onClick={() => submit(false)}
-          loading={addToCart.isPending}
-          disabled={!canSubmit}
-        >
+        <Button variant="outline" size="xl" fullWidth onClick={() => submit(false)} loading={addToCart.isPending} disabled={busy}>
           {dict.product.addToCart}
         </Button>
-        <Button variant="primary" size="xl" fullWidth onClick={() => submit(true)} disabled={!canSubmit}>
+        <Button variant="primary" size="xl" fullWidth onClick={() => submit(true)} loading={addToCart.isPending} disabled={busy}>
           {dict.product.buyNow}
         </Button>
       </div>

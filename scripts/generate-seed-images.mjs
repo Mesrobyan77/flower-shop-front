@@ -132,7 +132,7 @@ const CATEGORY_SLUGS = [
 ];
 
 const COLLECTION_SLUGS = [
-  'florist-picks', 'flower-of-the-month', 'flowers-and-gifts', 'newborn-gifts', 'season-picks',
+  'florist-picks', 'flower-of-the-month', 'flowers-and-gifts', 'newborn-gifts', 'season-picks', 'art-line',
 ];
 
 function write(name, svg) {

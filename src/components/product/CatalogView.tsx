@@ -290,10 +290,11 @@ export function CatalogView(props: CatalogViewProps) {
 }
 
 function CatalogFallback({ title }: { title: string }) {
+  // Loading placeholder: not a heading — the resolved content owns the page's only h1.
   return (
     <div className="mx-auto w-full max-w-[1292px] px-4 py-6 lg:py-10">
       <header className="mt-8 text-center lg:mt-12">
-        <h1 className="text-[24px] font-bold tracking-tight text-ink-strong lg:text-[30px]">{title}</h1>
+        <div className="text-[24px] font-bold tracking-tight text-ink-strong lg:text-[30px]">{title}</div>
       </header>
       <div className="mt-10">
         <ProductGridSkeleton count={12} />

@@ -32,22 +32,22 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const dict = getDictionary(defaultLocale);
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, hydrated } = useSession();
+  const { user, isAuthenticated, hydrated, booting } = useSession();
   const logout = useLogout(defaultLocale);
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || booting) return;
     if (!isAuthenticated) {
       router.replace(`${localePath(defaultLocale, '/login')}?redirect=/admin`);
       return;
     }
     if (user?.role !== 'admin') router.replace(localePath(defaultLocale, '/'));
-  }, [hydrated, isAuthenticated, user?.role, router]);
+  }, [hydrated, booting, isAuthenticated, user?.role, router]);
 
   useEffect(() => setNavOpen(false), [pathname]);
 
-  if (!hydrated || !isAuthenticated) {
+  if (!hydrated || booting || !isAuthenticated) {
     return (
       <div className="p-8">
         <Skeleton className="h-64 w-full" />

@@ -112,6 +112,8 @@ export const ru: Dictionary = {
     addToCart: 'В корзину',
     buyNow: 'Купить сейчас',
     outOfStock: 'Нет в наличии',
+    availability: 'Наличие',
+    available: 'В наличии',
     tabDescription: 'Описание',
     tabReviews: 'Отзывы',
     tabInquiries: 'Вопросы',
@@ -215,6 +217,20 @@ export const ru: Dictionary = {
     newAddress: 'Новый адрес',
     orderSummary: 'Сводка заказа',
     processing: 'Оформляем заказ…',
+    selectedOnProduct: 'Уже выбрано на странице товара',
+    paymentMethod: 'Способ оплаты',
+    paymentCash: 'Наличными',
+    paymentIdram: 'Idram',
+    paymentCard: 'Карта',
+    idramHint: 'Вы будете перенаправлены на защищённую страницу оплаты Idram.',
+    cardHint: 'Вы будете перенаправлены на защищённую страницу оплаты картой.',
+    paymentUnavailable: 'Временно недоступно',
+    redirecting: 'Перенаправляем на страницу оплаты…',
+    requiredFieldsToast: 'Пожалуйста, заполните обязательные поля.',
+    errorGeneric: 'Что-то пошло не так. Попробуйте ещё раз.',
+    providerUnavailable: 'Этот способ оплаты временно недоступен. Выберите другой.',
+    paymentNotStarted: 'Заказ создан, но страницу оплаты не удалось открыть. Попробуйте ещё раз.',
+    retryPayment: 'Повторить оплату',
   },
 
   orderComplete: {
@@ -229,6 +245,22 @@ export const ru: Dictionary = {
     step4: 'Вы платите наличными при получении',
     viewOrder: 'Посмотреть заказ',
     backHome: 'На главную',
+  },
+
+  paymentReturn: {
+    title: 'Статус оплаты',
+    processing: 'Проверяем статус оплаты…',
+    paidTitle: 'Платёж подтверждён',
+    paidHint: 'Мы получили подтверждение оплаты от платёжной системы.',
+    pendingTitle: 'Платёж ещё не подтверждён',
+    pendingHint: 'Если вы только что оплатили, подтверждение может занять несколько минут. Обновите статус.',
+    failedTitle: 'Платёж не прошёл',
+    failedHint: 'Платёж не прошёл. Заказ не был отмечен как оплаченный.',
+    cancelledTitle: 'Платёж отменён',
+    cancelledHint: 'Платёж был отменён. Заказ не был отмечен как оплаченный.',
+    refresh: 'Обновить статус',
+    missing: 'Не удалось найти данные платежа.',
+    orderLabel: 'Заказ',
   },
 
   auth: {
@@ -298,6 +330,8 @@ export const ru: Dictionary = {
     paymentPending: 'Не оплачен',
     paymentPaid: 'Оплачен',
     paymentRefunded: 'Возвращён',
+    paymentFailed: 'Не прошёл',
+    paymentCancelled: 'Отменён',
   },
 
   grades: {
@@ -374,6 +408,20 @@ export const ru: Dictionary = {
     privacy: 'Политика конфиденциальности',
   },
 
+  footer: {
+    tagline: 'Каждый букет рассказывает свою историю. Мы создаём тёплые моменты из букетов свежих цветов.',
+    quickLinks: 'Быстрые ссылки',
+    home: 'Главная',
+    flowers: 'Цветы',
+    contactUs: 'Свяжитесь с нами',
+    contactTitle: 'Контакты',
+    categoriesTitle: 'Категории',
+    legalTitle: 'Правовая информация',
+    followUs: 'Следите за нами',
+    paymentsTitle: 'Способы оплаты',
+    copyright: 'Все права защищены',
+  },
+
   admin: {
     title: 'Панель администратора',
     dashboard: 'Панель',
@@ -406,7 +454,11 @@ export const ru: Dictionary = {
   validation: {
     required: 'Обязательное поле',
     email: 'Введите корректный адрес почты',
+    emailRequired: 'Эл. почта обязательна',
     phone: 'Введите корректный номер телефона',
+    phoneRequired: 'Номер телефона обязателен',
+    deliveryDateRequired: 'Пожалуйста, выберите дату доставки',
+    deliveryTimeRequired: 'Пожалуйста, выберите время доставки',
     minLength: 'Слишком коротко',
     maxLength: 'Слишком длинно',
     passwordMatch: 'Пароли не совпадают',

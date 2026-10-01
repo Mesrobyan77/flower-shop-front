@@ -1,5 +1,16 @@
 import { del, get, getPaged, patch, post } from './client';
-import type { Cart, DeliveryMethod, DeliveryOption, Order, OrderStatus } from '@/types';
+import type {
+  Cart,
+  CheckoutResponse,
+  DeliveryMethod,
+  DeliveryOption,
+  Order,
+  OrderStatus,
+  PaymentMethod,
+  PaymentMethodAvailability,
+  PaymentStartResult,
+  PaymentStatusResponse,
+} from '@/types';
 
 export interface AddToCartBody {
   productId: string;
@@ -31,6 +42,7 @@ export interface CheckoutBody {
   };
   customerNote?: string;
   pointsUsed?: number;
+  paymentMethod: PaymentMethod;
   agreeTerms: true;
 }
 
@@ -66,10 +78,17 @@ export const deliveryApi = {
 };
 
 export const orderApi = {
-  checkout: (body: CheckoutBody) => post<Order>('/orders/checkout', body),
+  checkout: (body: CheckoutBody) => post<CheckoutResponse>('/orders/checkout', body),
   mine: (params: { page?: number; limit?: number; status?: OrderStatus } = {}) =>
     getPaged<Order>('/orders', params),
   detail: (code: string) => get<Order>(`/orders/${code}`),
   cancel: (code: string, reason?: string) => post<Order>(`/orders/${code}/cancel`, { reason }),
   lookup: (body: { code: string; email: string }) => post<Order>('/orders/lookup', body),
+};
+
+export const paymentApi = {
+  methods: () => get<PaymentMethodAvailability[]>('/payments/methods'),
+  start: (body: { token: string; locale: string }) => post<PaymentStartResult>('/payments/start', body),
+  status: (token: string, locale?: string) =>
+    get<PaymentStatusResponse>('/payments/status', { token, ...(locale ? { locale } : {}) }),
 };

@@ -20,6 +20,8 @@ export const qk = {
   deliveryOptions: ['delivery-options'] as const,
   deliveryQuote: (method: string, region: string, subtotal: number) =>
     ['delivery-quote', method, region, subtotal] as const,
+  paymentMethods: ['payment-methods'] as const,
+  paymentStatus: (token: string) => ['payment-status', token] as const,
 
   me: ['me'] as const,
   accountSummary: ['account-summary'] as const,

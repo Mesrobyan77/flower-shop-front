@@ -30,26 +30,29 @@ export function OrderStatusBadge({ status, dict }: { status: OrderStatus; dict: 
   );
 }
 
-export function PaymentStatusBadge({ status, dict }: { status: PaymentStatus; dict: Dictionary }) {
-  const label =
-    status === 'paid'
-      ? dict.status.paymentPaid
-      : status === 'refunded'
-        ? dict.status.paymentRefunded
-        : dict.status.paymentPending;
+export const PAYMENT_STATUS_KEY: Record<PaymentStatus, keyof Dictionary['status']> = {
+  pending: 'paymentPending',
+  paid: 'paymentPaid',
+  failed: 'paymentFailed',
+  cancelled: 'paymentCancelled',
+  refunded: 'paymentRefunded',
+};
 
+export function PaymentStatusBadge({ status, dict }: { status: PaymentStatus; dict: Dictionary }) {
   return (
     <span
       className={cn(
         'inline-flex items-center rounded-pill border px-2.5 py-1 text-[11px]',
         status === 'paid'
           ? 'border-olive/30 bg-olive/10 text-olive-dark'
-          : status === 'refunded'
-            ? 'border-line bg-surface-soft text-ink-muted'
-            : 'border-gold/40 bg-gold-wash text-ink',
+          : status === 'failed' || status === 'cancelled'
+            ? 'border-danger-soft/30 bg-danger-soft/10 text-danger-soft'
+            : status === 'refunded'
+              ? 'border-line bg-surface-soft text-ink-muted'
+              : 'border-gold/40 bg-gold-wash text-ink',
       )}
     >
-      {label}
+      {dict.status[PAYMENT_STATUS_KEY[status]]}
     </span>
   );
 }

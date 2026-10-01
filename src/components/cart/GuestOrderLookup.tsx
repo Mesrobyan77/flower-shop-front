@@ -5,15 +5,21 @@ import { useState } from 'react';
 import { formatDate, formatPrice } from '@/lib/utils';
 import type { Dictionary, Locale } from '@/lib/i18n';
 import { orderApi } from '@/lib/api/commerce';
+import { useUiStore } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { OrderStatusBadge, OrderTimeline } from '@/components/account/OrderPieces';
 import type { Order } from '@/types';
 
+const EMAIL_RE = /^\S+@\S+\.\S+$/;
+const FIELD_IDS: Record<string, string> = { code: 'lookup-code', email: 'lookup-email' };
+
 /** Guest tab of the reference login page: find an order by number plus email. */
 export function GuestOrderLookup({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+  const notify = useUiStore((s) => s.notify);
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [order, setOrder] = useState<Order | null>(null);
 
   const lookup = useMutation({
@@ -21,12 +27,43 @@ export function GuestOrderLookup({ locale, dict }: { locale: Locale; dict: Dicti
     onSuccess: setOrder,
   });
 
+  const updateField = (key: 'code' | 'email', value: string) => {
+    if (key === 'code') setCode(value);
+    else setEmail(value);
+    setErrors((state) => {
+      if (!state[key]) return state;
+      const rest = { ...state };
+      delete rest[key];
+      return rest;
+    });
+  };
+
+  const submit = () => {
+    const next: Record<string, string> = {};
+    if (!code.trim()) next.code = dict.validation.required;
+    if (!email.trim()) next.email = dict.validation.emailRequired;
+    else if (!EMAIL_RE.test(email.trim())) next.email = dict.validation.email;
+
+    setErrors(next);
+    if (Object.keys(next).length > 0) {
+      notify(dict.checkout.requiredFieldsToast, 'error');
+      const firstKey = Object.keys(FIELD_IDS).find((key) => next[key]);
+      const field = firstKey ? document.getElementById(FIELD_IDS[firstKey]) : null;
+      field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      field?.focus({ preventScroll: true });
+      return;
+    }
+
+    lookup.mutate();
+  };
+
   return (
     <div className="mt-6 flex flex-col gap-5">
       <form
+        noValidate
         onSubmit={(event) => {
           event.preventDefault();
-          lookup.mutate();
+          submit();
         }}
         className="flex flex-col gap-4"
       >
@@ -35,7 +72,8 @@ export function GuestOrderLookup({ locale, dict }: { locale: Locale; dict: Dicti
           label={dict.auth.orderNumber}
           required
           value={code}
-          onChange={(event) => setCode(event.target.value)}
+          onChange={(event) => updateField('code', event.target.value)}
+          error={errors.code}
           placeholder="XF-20260101-AB12C"
         />
         <Input
@@ -44,9 +82,10 @@ export function GuestOrderLookup({ locale, dict }: { locale: Locale; dict: Dicti
           label={dict.auth.email}
           required
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => updateField('email', event.target.value)}
+          error={errors.email}
         />
-        {lookup.isError && <p className="text-[12px] text-danger-soft">{(lookup.error as Error).message}</p>}
+        {lookup.isError && <p className="text-[12px] text-danger-soft">{dict.checkout.errorGeneric}</p>}
         <Button type="submit" size="lg" fullWidth loading={lookup.isPending}>
           {dict.auth.lookup}
         </Button>

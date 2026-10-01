@@ -112,6 +112,8 @@ export const en: Dictionary = {
     addToCart: 'Add to cart',
     buyNow: 'Buy now',
     outOfStock: 'Out of stock',
+    availability: 'Availability',
+    available: 'Available',
     tabDescription: 'Description',
     tabReviews: 'Reviews',
     tabInquiries: 'Questions',
@@ -215,6 +217,20 @@ export const en: Dictionary = {
     newAddress: 'New address',
     orderSummary: 'Order summary',
     processing: 'Placing the order…',
+    selectedOnProduct: 'Already selected on the product page',
+    paymentMethod: 'Payment method',
+    paymentCash: 'Cash',
+    paymentIdram: 'Idram',
+    paymentCard: 'Bank card',
+    idramHint: "You will be redirected to Idram's secure payment page.",
+    cardHint: 'You will be redirected to a secure card payment page.',
+    paymentUnavailable: 'Temporarily unavailable',
+    redirecting: 'Redirecting to the payment page…',
+    requiredFieldsToast: 'Please complete the required fields.',
+    errorGeneric: 'Something went wrong. Please try again.',
+    providerUnavailable: 'This payment method is temporarily unavailable. Please choose another one.',
+    paymentNotStarted: 'The order was created, but the payment page could not be opened. Please try again.',
+    retryPayment: 'Retry payment',
   },
 
   orderComplete: {
@@ -229,6 +245,22 @@ export const en: Dictionary = {
     step4: 'You pay in cash on arrival',
     viewOrder: 'View the order',
     backHome: 'Back to home',
+  },
+
+  paymentReturn: {
+    title: 'Payment status',
+    processing: 'Checking the payment status…',
+    paidTitle: 'Payment confirmed',
+    paidHint: 'We received the payment confirmation from the payment provider.',
+    pendingTitle: 'Payment is not confirmed yet',
+    pendingHint: 'If you just paid, confirmation can take a few minutes. Refresh the status.',
+    failedTitle: 'Payment failed',
+    failedHint: 'Payment failed. The order has not been marked as paid.',
+    cancelledTitle: 'Payment cancelled',
+    cancelledHint: 'The payment was cancelled. The order has not been marked as paid.',
+    refresh: 'Refresh status',
+    missing: 'We could not find the payment details.',
+    orderLabel: 'Order',
   },
 
   auth: {
@@ -298,6 +330,8 @@ export const en: Dictionary = {
     paymentPending: 'Unpaid',
     paymentPaid: 'Paid',
     paymentRefunded: 'Refunded',
+    paymentFailed: 'Failed',
+    paymentCancelled: 'Cancelled',
   },
 
   grades: {
@@ -374,6 +408,20 @@ export const en: Dictionary = {
     privacy: 'Privacy policy',
   },
 
+  footer: {
+    tagline: 'Every bouquet tells a story. We craft warm moments with arrangements made from the freshest stems.',
+    quickLinks: 'Quick links',
+    home: 'Home',
+    flowers: 'Flowers',
+    contactUs: 'Contact us',
+    contactTitle: 'Contact',
+    categoriesTitle: 'Categories',
+    legalTitle: 'Legal',
+    followUs: 'Follow us',
+    paymentsTitle: 'Payment methods',
+    copyright: 'All rights reserved',
+  },
+
   admin: {
     title: 'Admin panel',
     dashboard: 'Dashboard',
@@ -406,7 +454,11 @@ export const en: Dictionary = {
   validation: {
     required: 'This field is required',
     email: 'Enter a valid email address',
+    emailRequired: 'Email is required',
     phone: 'Enter a valid phone number',
+    phoneRequired: 'Phone number is required',
+    deliveryDateRequired: 'Please select a delivery date',
+    deliveryTimeRequired: 'Please select a delivery time',
     minLength: 'Too short',
     maxLength: 'Too long',
     passwordMatch: 'Passwords do not match',

@@ -16,7 +16,7 @@ interface Particle {
   fadeSpeed: number;
 }
 
-const FLOWERS = ['🌸', '🌺', '🌼', '💐', '🥀', '🌻', '🌷', '🌹', ''];
+const FLOWERS = ['🌸', '🌺', '🌼', '💐', '🌻', '🌷', '🌹','🧸', '❤️', '✨'];
 
 export default function FlowerCursor() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { Breadcrumb } from '@/components/ui/Display';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { breadcrumbSchema } from '@/lib/structured-data';
 import { localePath, type Dictionary, type Locale } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -21,15 +23,16 @@ export function PageShell({
   children: ReactNode;
   narrow?: boolean;
 }) {
+  const breadcrumbItems = [
+    { label: dict.product.breadcrumbHome, href: localePath(locale, '/') },
+    ...crumbs,
+    { label: title },
+  ];
+
   return (
     <div className="rail py-6 lg:py-10">
-      <Breadcrumb
-        items={[
-          { label: dict.product.breadcrumbHome, href: localePath(locale, '/') },
-          ...crumbs,
-          { label: title },
-        ]}
-      />
+      <JsonLd data={breadcrumbSchema(breadcrumbItems.map((item) => ({ name: item.label, path: item.href })))} />
+      <Breadcrumb items={breadcrumbItems} />
 
       <header className="mt-4 border-b border-line pb-6 lg:mt-6 lg:pb-8">
         <h1 className="text-[24px] font-semibold tracking-tight text-ink-strong lg:text-[32px]">{title}</h1>

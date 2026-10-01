@@ -1,6 +1,10 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { serverGet, serverGetPaged } from '@/lib/api/client';
 import { getDictionary, isLocale, localePath, pickLocalized, type Locale } from '@/lib/i18n';
+import { buildPageMetadata } from '@/lib/seo';
+import { organizationSchema, websiteSchema } from '@/lib/structured-data';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { ProductCarousel } from '@/components/product/ProductCard';
 import { HeroSlider } from '@/components/home/HeroSlider';
 import { CollectionTabs } from '@/components/home/CollectionTabs';
@@ -19,6 +23,20 @@ import {
 import type { Collection, Post, Product, StoreSettings } from '@/types';
 
 export const revalidate = 120;
+
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) return {};
+  const dict = getDictionary(params.locale);
+
+  return buildPageMetadata({
+    locale: params.locale,
+    path: '/',
+    title: `${dict.meta.siteName} - ${dict.meta.tagline}`,
+    titleAbsolute: true,
+    description: dict.meta.description,
+  });
+}
 
 export default async function HomePage(props: { params: Promise<{ locale: string }> }) {
   const params = await props.params;
@@ -61,6 +79,12 @@ export default async function HomePage(props: { params: Promise<{ locale: string
 
   return (
     <>
+      <JsonLd
+        data={[
+          organizationSchema(settings, locale, dict.meta.siteName),
+          websiteSchema(locale, dict.meta.siteName),
+        ]}
+      />
       <HeroSlider slides={slides} locale={locale} />
 
       <CategoryCircles tiles={tiles} locale={locale} />

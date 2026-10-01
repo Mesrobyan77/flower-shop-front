@@ -1,8 +1,17 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { getDictionary, isLocale, type Locale } from '@/lib/i18n';
 import { RegisterForm } from '@/components/account/AuthForms';
 
-export const metadata = { title: 'Register' };
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  if (!isLocale(params.locale)) return {};
+  const dict = getDictionary(params.locale);
+  return {
+    title: dict.auth.registerTitle,
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function RegisterPage(props: { params: Promise<{ locale: string }> }) {
   const params = await props.params;

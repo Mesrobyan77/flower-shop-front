@@ -8,8 +8,8 @@ import { useAuthStore } from '@/store/auth';
 import { useUiStore } from '@/store/ui';
 
 export function useSession() {
-  const { user, accessToken, hydrated } = useAuthStore();
-  return { user, isAuthenticated: Boolean(user && accessToken), hydrated };
+  const { user, accessToken, hydrated, bootstrapping } = useAuthStore();
+  return { user, isAuthenticated: Boolean(user && accessToken), hydrated, booting: bootstrapping };
 }
 
 /** Revalidates the cached user against the API once the app mounts. */

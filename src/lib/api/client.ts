@@ -52,7 +52,12 @@ http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 let refreshing: Promise<string | null> | null = null;
 
-async function refreshAccessToken(): Promise<string | null> {
+/**
+ * Exchanges the HttpOnly refresh cookie for a fresh access token. Shared by the
+ * 401 interceptor and the session bootstrap so concurrent callers (page load +
+ * in-flight request) collapse into ONE rotation request.
+ */
+export async function refreshAccessToken(): Promise<string | null> {
   if (!refreshing) {
     refreshing = axios
       .post<ApiSuccess<{ accessToken: string }>>(`${API_URL}/auth/refresh`, {}, { withCredentials: true })
