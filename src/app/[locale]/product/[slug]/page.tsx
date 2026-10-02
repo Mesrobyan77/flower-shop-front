@@ -174,7 +174,7 @@ export default async function ProductPage(props: Params) {
           </dl>
 
           <div className="mt-8">
-            <PurchasePanel product={product} delivery={delivery} locale={locale} dict={dict} />
+            <PurchasePanel product={product} locale={locale} dict={dict} />
           </div>
         </div>
       </div>

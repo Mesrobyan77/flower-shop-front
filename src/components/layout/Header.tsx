@@ -117,8 +117,8 @@ export function Header({ locale, dict }: HeaderProps) {
         />
 
         <div className="relative z-[2] mx-auto w-full max-w-[1292px] px-4">
-          {/* Row 1 - Logo, Search, Navigation */}
-          <div className="flex h-[60px] items-center gap-4 xl:h-[75px]">
+          {/* Row 1 - Logo, Search, Navigation Icons */}
+          <div className="flex h-[60px] items-center justify-between gap-4 xl:h-[75px]">
             <Link href={localePath(locale, '/')} aria-label={dict.meta.siteName} className="shrink-0">
               <Wordmark tone={transparent ? 'light' : 'brand'} />
             </Link>
@@ -148,7 +148,7 @@ export function Header({ locale, dict }: HeaderProps) {
               </button>
             </form>
 
-            <nav className="ml-auto flex items-center gap-1 2xl:ml-0 2xl:mr-[210px]" aria-label={dict.nav.menu}>
+            <nav className="flex items-center gap-1" aria-label={dict.nav.menu}>
               <button
                 type="button"
                 onClick={() => toggleSearch()}
@@ -196,40 +196,42 @@ export function Header({ locale, dict }: HeaderProps) {
 
           {/* Row 2 - Menu links */}
           <nav
-            className="relative hidden h-[44px] items-center gap-1 text-[16px] xl:flex"
+            className="relative hidden h-[44px] items-center justify-between gap-1 text-[16px] xl:flex"
             aria-label={dict.nav.allMenu}
           >
-            <button
-              type="button"
-              onClick={() => toggleMega()}
-              aria-expanded={megaOpen}
-              aria-label={dict.nav.allMenu}
-              className="flex h-10 w-10 items-center justify-center transition-opacity hover:opacity-70"
-            >
-              {megaOpen ? <CloseIcon className="h-[22px] w-[22px]" /> : <MenuIcon className="h-[22px] w-[22px]" />}
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => toggleMega()}
+                aria-expanded={megaOpen}
+                aria-label={dict.nav.allMenu}
+                className="flex h-10 w-10 items-center justify-center transition-opacity hover:opacity-70"
+              >
+                {megaOpen ? <CloseIcon className="h-[22px] w-[22px]" /> : <MenuIcon className="h-[22px] w-[22px]" />}
+              </button>
 
-            <ul className="flex items-center">
-              {quickLinks.map((link) => {
-                const [base] = link.href.split('?');
-                const active = pathname.startsWith(localePath(locale, base));
-                return (
-                  <li key={link.href}>
-                    <Link
-                      href={localePath(locale, link.href)}
-                      className={cn(
-                        'inline-block whitespace-nowrap px-3.5 py-1.5 font-medium transition-opacity hover:opacity-70',
-                        active && !transparent && 'text-brand'
-                      )}
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+              <ul className="flex items-center">
+                {quickLinks.map((link) => {
+                  const [base] = link.href.split('?');
+                  const active = pathname.startsWith(localePath(locale, base));
+                  return (
+                    <li key={link.href}>
+                      <Link
+                        href={localePath(locale, link.href)}
+                        className={cn(
+                          'inline-block whitespace-nowrap px-3.5 py-1.5 font-medium transition-opacity hover:opacity-70',
+                          active && !transparent && 'text-brand'
+                        )}
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
 
-            <div className="ml-auto 2xl:mr-[210px]">
+            <div>
               <LanguageSwitcher locale={locale} transparent={transparent} label={dict.nav.language} />
             </div>
 

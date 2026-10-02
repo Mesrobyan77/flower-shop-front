@@ -2,8 +2,8 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { cn, dateKey, formatPrice, todayIso } from '@/lib/utils';
+import { useEffect, useMemo, useState } from 'react';
+import { cn, formatPrice, todayIso } from '@/lib/utils';
 import { localePath, type Dictionary, type Locale } from '@/lib/i18n';
 import { ApiClientError } from '@/lib/api/client';
 import { deliveryApi, orderApi, paymentApi, type CheckoutBody } from '@/lib/api/commerce';
@@ -47,8 +47,8 @@ interface PendingPayment {
 
 /**
  * Checkout mirrors the reference order form: buyer block, recipient block,
- * delivery block, payment method and the summary. Delivery choices made on the
- * product page are prefilled and summarised here; validation is app-level and
+ * delivery block, payment method and the summary. It is the only place customer,
+ * recipient and delivery details are collected; validation is app-level and
  * localized, and online payments leave through the provider-hosted page.
  */
 export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
@@ -95,62 +95,6 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
     if (!allowedMethods.includes(draft.method)) update({ method: allowedMethods[0], timeSlot: '' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config, allowedMethods.join(',')]);
-
-  /**
-   * Phases 1: honour the delivery choices from the product page. The draft
-   * wins whenever the user already touched a field (including on refresh,
-   * because the draft is persisted), so prefill only fills blanks, once.
-   * Waits for the region config so `allowedMethods` is the real list, not the
-   * pre-load fallback that would drop the product-page delivery choices.
-   */
-  const prefilledRef = useRef(false);
-  useEffect(() => {
-    if (prefilledRef.current || !cart || cart.items.length === 0 || !deliveryOptions || !config) return;
-    prefilledRef.current = true;
-
-    const first = cart.items.find((item) => item.deliveryDate) ?? cart.items[0];
-    if (!first) return;
-
-    const patch: Partial<CheckoutDraft> = {};
-    const itemMethod = first.deliveryMethod;
-    const untouchedDelivery = !draft.requestedDate && !draft.timeSlot;
-    if (untouchedDelivery && itemMethod !== draft.method && allowedMethods.includes(itemMethod)) {
-      patch.method = itemMethod;
-    }
-    const effectiveMethod = patch.method ?? draft.method;
-    const option = deliveryOptions?.methods.find((m) => m.method === effectiveMethod);
-    const validDates = new Set(
-      (option?.calendar ?? []).filter((day) => day.available && day.date >= todayIso()).map((day) => day.date),
-    );
-    const wantedDate = dateKey(first.deliveryDate);
-    if (!draft.requestedDate && wantedDate && validDates.has(wantedDate)) {
-      patch.requestedDate = wantedDate;
-    }
-    if (
-      !draft.timeSlot &&
-      first.timeSlot &&
-      effectiveMethod === 'quick' &&
-      (option?.timeSlots ?? []).includes(first.timeSlot)
-    ) {
-      patch.timeSlot = first.timeSlot;
-    }
-    if (Object.keys(patch).length > 0) update(patch);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, deliveryOptions, config]);
-
-  /** Distinct delivery choices made on the product page, shown read-only. */
-  const productDelivery = useMemo(() => {
-    if (!cart) return [];
-    const rows: { name: string; method: DeliveryMethod; date?: string; slot?: string }[] = [];
-    const seen = new Set<string>();
-    for (const item of cart.items) {
-      const key = `${item.deliveryMethod}|${item.deliveryDate ?? ''}|${item.timeSlot ?? ''}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      rows.push({ name: item.product?.name ?? '', method: item.deliveryMethod, date: dateKey(item.deliveryDate) || undefined, slot: item.timeSlot });
-    }
-    return rows;
-  }, [cart]);
 
   const methodOption = deliveryOptions?.methods.find((m) => m.method === draft.method);
   const timeSlots = methodOption?.timeSlots ?? [];
@@ -514,24 +458,6 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
 
         <section>
           <h2 className="mb-4 text-[14px] font-semibold text-ink-strong">{dict.checkout.deliveryInfo}</h2>
-
-          {productDelivery.length > 0 && (
-            <div className="mb-4 rounded-tile border border-line-soft bg-surface-soft/60 px-4 py-3">
-              <p className="text-[12px] font-semibold text-ink-strong">{dict.checkout.selectedOnProduct}</p>
-              <ul className="mt-2 flex flex-col gap-1 text-[11.5px] text-ink-muted">
-                {productDelivery.map((row, index) => (
-                  <li key={index} className="flex flex-wrap justify-between gap-x-3">
-                    <span className="min-w-0 flex-1 truncate">{row.name}</span>
-                    <span className="shrink-0">
-                      {dict.delivery[row.method]}
-                      {row.date ? ` · ${row.date}` : ''}
-                      {row.slot ? ` · ${row.slot}` : ''}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
 
           <div className="flex flex-col gap-2">
             {allowedMethods.map((method) => (
