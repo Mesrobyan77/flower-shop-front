@@ -73,7 +73,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       >
         <div className="flex h-16 items-center justify-between border-b border-line px-5">
           <Link href="/admin">
-            <Wordmark tone="brand" className="h-[20px] w-[120px]" />
+            <Wordmark tone="brand" className="h-10" />
           </Link>
           <button
             type="button"

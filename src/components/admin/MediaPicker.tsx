@@ -6,6 +6,7 @@ import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { defaultLocale, getDictionary } from '@/lib/i18n';
 import { adminApi, type MediaItem } from '@/lib/api/admin';
+import { useApiError } from '@/lib/hooks/useApiError';
 import { qk } from '@/lib/queryKeys';
 import { useUiStore } from '@/store/ui';
 import { ConfirmDialog, Modal } from '@/components/ui/Overlay';
@@ -90,6 +91,7 @@ export function MediaLibrary({
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [toDelete, setToDelete] = useState<MediaItem | null>(null);
@@ -109,7 +111,7 @@ export function MediaLibrary({
       if (first && onPick) onPick(first.url);
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   const remove = useMutation({
@@ -118,7 +120,7 @@ export function MediaLibrary({
       client.invalidateQueries({ queryKey: ['admin-media'] });
       notify(dict.common.delete, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   const handleFiles = (files: FileList | null) => {

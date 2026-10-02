@@ -120,7 +120,7 @@ export function Header({ locale, dict }: HeaderProps) {
           {/* Row 1 - Logo, Search, Navigation Icons */}
           <div className="flex h-[60px] items-center justify-between gap-4 xl:h-[75px]">
             <Link href={localePath(locale, '/')} aria-label={dict.meta.siteName} className="shrink-0">
-              <Wordmark tone={transparent ? 'light' : 'brand'} />
+              <Wordmark tone={transparent ? 'light' : 'brand'} priority className="h-10 xl:h-12" />
             </Link>
 
             <form

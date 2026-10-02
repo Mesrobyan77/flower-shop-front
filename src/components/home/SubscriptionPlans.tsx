@@ -10,6 +10,7 @@ import { contentApi } from '@/lib/api/content';
 import { accountApi } from '@/lib/api/account';
 import { qk } from '@/lib/queryKeys';
 import { useAppConfig } from '@/lib/hooks/useCatalog';
+import { useApiError } from '@/lib/hooks/useApiError';
 import { useSession } from '@/lib/hooks/useAuth';
 import { useUiStore } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
@@ -27,6 +28,7 @@ export function SubscriptionPlans({ locale, dict }: { locale: Locale; dict: Dict
   const { isAuthenticated } = useSession();
   const { data: config } = useAppConfig();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const { data: plans, isLoading } = useQuery({ queryKey: qk.plans, queryFn: contentApi.plans });
   const [selected, setSelected] = useState<SubscriptionPlan | null>(null);
@@ -54,7 +56,7 @@ export function SubscriptionPlans({ locale, dict }: { locale: Locale; dict: Dict
       notify(dict.subscription.subscribe, 'success');
       router.push(localePath(locale, '/account/subscriptions'));
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   if (isLoading) return <Skeleton className="h-72 w-full" />;

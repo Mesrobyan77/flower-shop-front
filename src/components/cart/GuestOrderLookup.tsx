@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { formatDate, formatPrice } from '@/lib/utils';
 import type { Dictionary, Locale } from '@/lib/i18n';
+import { getLocalizedApiError } from '@/lib/api/errors';
 import { orderApi } from '@/lib/api/commerce';
 import { useUiStore } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
@@ -85,7 +86,9 @@ export function GuestOrderLookup({ locale, dict }: { locale: Locale; dict: Dicti
           onChange={(event) => updateField('email', event.target.value)}
           error={errors.email}
         />
-        {lookup.isError && <p className="text-[12px] text-danger-soft">{dict.checkout.errorGeneric}</p>}
+        {lookup.isError && (
+          <p className="text-[12px] text-danger-soft">{getLocalizedApiError(lookup.error, locale)}</p>
+        )}
         <Button type="submit" size="lg" fullWidth loading={lookup.isPending}>
           {dict.auth.lookup}
         </Button>

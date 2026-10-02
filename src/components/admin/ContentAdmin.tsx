@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { cn, formatDate, formatPrice } from '@/lib/utils';
 import { defaultLocale, getDictionary, pickLocalized } from '@/lib/i18n';
 import { adminApi } from '@/lib/api/admin';
+import { useApiError } from '@/lib/hooks/useApiError';
 import { qk } from '@/lib/queryKeys';
 import { useUiStore } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
@@ -26,6 +27,7 @@ export function CategoriesAdmin() {
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const { data, isLoading } = useQuery({ queryKey: qk.adminCategories, queryFn: adminApi.categories });
   const [editing, setEditing] = useState<Category | null>(null);
@@ -83,13 +85,13 @@ export function CategoriesAdmin() {
       setOpen(false);
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   const remove = useMutation({
     mutationFn: (categoryId: string) => adminApi.deleteCategory(categoryId),
     onSuccess: () => client.invalidateQueries({ queryKey: qk.adminCategories }),
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   if (isLoading) return <Skeleton className="h-64 w-full" />;
@@ -219,6 +221,7 @@ export function CollectionsAdmin() {
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const { data, isLoading } = useQuery({ queryKey: qk.adminCollections, queryFn: adminApi.collections });
   const { data: products } = useQuery({
@@ -273,7 +276,7 @@ export function CollectionsAdmin() {
       setOpen(false);
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   const remove = useMutation({
@@ -282,7 +285,7 @@ export function CollectionsAdmin() {
       client.invalidateQueries({ queryKey: qk.adminCollections });
       notify(dict.common.delete, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   if (isLoading) return <Skeleton className="h-64 w-full" />;
@@ -413,6 +416,7 @@ export function UsersAdmin() {
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
 
@@ -425,7 +429,7 @@ export function UsersAdmin() {
       client.invalidateQueries({ queryKey: ['admin-users'] });
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   return (
@@ -486,6 +490,7 @@ export function ReviewsAdmin() {
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
   const [page, setPage] = useState(1);
 
   const params = { page };
@@ -497,7 +502,7 @@ export function ReviewsAdmin() {
       client.invalidateQueries({ queryKey: ['admin-reviews'] });
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   if (isLoading) return <Skeleton className="h-64 w-full" />;
@@ -549,6 +554,7 @@ export function InquiriesAdmin() {
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const [page, setPage] = useState(1);
   const [answering, setAnswering] = useState<string | null>(null);
@@ -568,7 +574,7 @@ export function InquiriesAdmin() {
       setAnswer('');
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   if (isLoading) return <Skeleton className="h-64 w-full" />;
@@ -651,6 +657,7 @@ export function PostsAdmin() {
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const [page, setPage] = useState(1);
   const [type, setType] = useState<PostType | ''>('');
@@ -703,7 +710,7 @@ export function PostsAdmin() {
       setEditing(null);
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   const remove = useMutation({
@@ -712,7 +719,7 @@ export function PostsAdmin() {
       client.invalidateQueries({ queryKey: ['admin-posts'] });
       notify(dict.common.delete, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   return (

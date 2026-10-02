@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { cn, formatPrice } from '@/lib/utils';
 import { defaultLocale, getDictionary, locales, pickLocalized, type Locale } from '@/lib/i18n';
 import { adminApi } from '@/lib/api/admin';
+import { useApiError } from '@/lib/hooks/useApiError';
 import { qk } from '@/lib/queryKeys';
 import { useUiStore } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
@@ -30,6 +31,7 @@ export function ProductsAdmin() {
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -47,7 +49,7 @@ export function ProductsAdmin() {
       client.invalidateQueries({ queryKey: ['admin-products'] });
       notify(dict.common.delete, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   return (
@@ -196,6 +198,7 @@ export function ProductForm({ id }: { id?: string }) {
   const router = useRouter();
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const isEdit = Boolean(id && id !== 'new');
 
@@ -261,7 +264,7 @@ export function ProductForm({ id }: { id?: string }) {
       notify(dict.common.save, 'success');
       router.push('/admin/products');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   if (isEdit && isLoading) return <Skeleton className="h-96 w-full" />;

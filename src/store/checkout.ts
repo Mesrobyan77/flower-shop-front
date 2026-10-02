@@ -31,7 +31,7 @@ const EMPTY: CheckoutDraft = {
   customerPhone: '',
   recipient: '',
   recipientPhone: '',
-  region: 'yerevan',
+  region: '',
   city: '',
   street: '',
   building: '',

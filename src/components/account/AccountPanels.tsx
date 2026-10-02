@@ -23,6 +23,7 @@ import {
   useWishlist,
 } from '@/lib/hooks/useAccount';
 import { useAppConfig } from '@/lib/hooks/useCatalog';
+import { useApiError } from '@/lib/hooks/useApiError';
 import { useSession } from '@/lib/hooks/useAuth';
 import { useAuthStore } from '@/store/auth';
 import { useUiStore } from '@/store/ui';
@@ -592,12 +593,13 @@ export function SubscriptionsPanel({ locale, dict }: { locale: Locale; dict: Dic
   const { data, isLoading } = useSubscriptions();
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const change = useMutation({
     mutationFn: ({ id, action }: { id: string; action: 'pause' | 'resume' | 'cancel' }) =>
       accountApi.setSubscriptionStatus(id, action),
     onSuccess: () => client.invalidateQueries({ queryKey: qk.subscriptions }),
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   if (isLoading) return <Skeleton className="h-48 w-full" />;
@@ -691,6 +693,7 @@ export function ProfilePanel({ dict }: { dict: Dictionary }) {
   const { user } = useSession();
   const setUser = useAuthStore((s) => s.setUser);
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const [name, setName] = useState(user?.name ?? '');
   const [phone, setPhone] = useState(user?.phone ?? '');
@@ -706,7 +709,7 @@ export function ProfilePanel({ dict }: { dict: Dictionary }) {
       setUser(updated);
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   const password = useMutation({
@@ -717,7 +720,7 @@ export function ProfilePanel({ dict }: { dict: Dictionary }) {
       setConfirmPassword('');
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   return (

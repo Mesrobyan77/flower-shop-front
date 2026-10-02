@@ -1,13 +1,18 @@
 'use client';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { cn, formatPrice, todayIso } from '@/lib/utils';
 import { localePath, type Dictionary, type Locale } from '@/lib/i18n';
+import { communitiesFor } from '@/lib/communities';
 import { ApiClientError } from '@/lib/api/client';
+import { getLocalizedApiError, getLocalizedFieldError } from '@/lib/api/errors';
 import { deliveryApi, orderApi, paymentApi, type CheckoutBody } from '@/lib/api/commerce';
 import { qk } from '@/lib/queryKeys';
+import { useApiError } from '@/lib/hooks/useApiError';
 import { useCart } from '@/lib/hooks/useCart';
 import { useAddresses } from '@/lib/hooks/useAccount';
 import { useAppConfig, useDeliveryOptions } from '@/lib/hooks/useCatalog';
@@ -16,7 +21,7 @@ import { redirectToProvider, savePendingPayment } from '@/lib/paymentFlow';
 import { useCheckoutStore, type CheckoutDraft } from '@/store/checkout';
 import { useUiStore } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
-import { Checkbox, Input, Select, Textarea } from '@/components/ui/Input';
+import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/Input';
 import { EmptyState, Skeleton } from '@/components/ui/Feedback';
 import { ButtonLink } from '@/components/ui/Button';
 import type { CheckoutPayment, DeliveryMethod, PaymentMethod } from '@/types';
@@ -30,6 +35,7 @@ const FIELD_IDS: Record<string, string> = {
   'customer.phone': 'customer-phone',
   'delivery.recipient': 'recipient',
   'delivery.phone': 'recipient-phone',
+  'delivery.region': 'region',
   'delivery.city': 'city',
   'delivery.street': 'street',
   'delivery.requestedDate': 'requested-date',
@@ -37,6 +43,30 @@ const FIELD_IDS: Record<string, string> = {
 };
 
 const PAYMENT_METHODS: PaymentMethod[] = ['cash_on_delivery', 'idram', 'arca'];
+
+const ARMENIA_DIAL_CODE = '374';
+
+/** Subscriber mask: "+374" comes from the flag prefix, the user types 8 more digits. */
+const PHONE_MASKS = { am: '.. ... ...' };
+
+/** Digits-only value the input and the stored draft share; Armenia assumed for local input. */
+const normalizePhone = (raw: string): string => {
+  const digits = raw.replace(/\D/g, '').replace(/^0+/, '');
+  if (!digits) return '';
+  if (digits.startsWith(ARMENIA_DIAL_CODE)) return digits;
+  return digits.length < 10 ? `${ARMENIA_DIAL_CODE}${digits}` : digits;
+};
+
+/** Clean E.164 value for the backend; unparseable legacy values stay as typed. */
+const toBackendPhone = (raw: string): string => {
+  const digits = normalizePhone(raw);
+  return digits ? `+${digits}` : raw.trim();
+};
+
+const PHONE_INPUT_CLASS =
+  '!h-11 !w-full !rounded-card !border !border-line !bg-white !pl-12 !pr-3 !text-[13px] !text-ink font-[inherit] ' +
+  'focus:!border-brand focus:!shadow-none';
+const PHONE_BUTTON_CLASS = '!rounded-l-card !border-0 !bg-transparent';
 
 interface PendingPayment {
   token: string;
@@ -53,12 +83,14 @@ interface PendingPayment {
  */
 export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const router = useRouter();
+  const client = useQueryClient();
   const { data: cart, isLoading } = useCart();
   const { data: config } = useAppConfig();
   const { data: deliveryOptions } = useDeliveryOptions();
   const { data: addresses } = useAddresses();
   const { user, isAuthenticated } = useSession();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const { draft, update, reset } = useCheckoutStore();
   const [agree, setAgree] = useState(false);
@@ -79,6 +111,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
 
   const regions = config?.regions ?? [];
   const activeRegion = regions.find((r) => r.key === draft.region);
+  const cityOptions = communitiesFor(draft.region);
 
   const allowedMethods = useMemo<DeliveryMethod[]>(() => {
     if (!activeRegion) return ['parcel', 'pickup'];
@@ -126,6 +159,14 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentMethods, draft.paymentMethod]);
 
+  // Drafts persisted (or autofilled) with a city outside the selected region's list
+  // must not survive: the select would show an option that is not rendered.
+  useEffect(() => {
+    if (!draft.city) return;
+    if (!communitiesFor(draft.region).some((community) => community.value === draft.city)) update({ city: '' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.region, draft.city]);
+
   const paymentLabel: Record<PaymentMethod, string> = {
     cash_on_delivery: dict.checkout.paymentCash,
     idram: dict.checkout.paymentIdram,
@@ -144,6 +185,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
   const checkout = useMutation({
     mutationFn: (body: CheckoutBody) => orderApi.checkout(body),
     onSuccess: ({ order, payment }) => {
+      void client.invalidateQueries({ queryKey: qk.cart });
       if (!payment) {
         reset();
         router.push(localePath(locale, `/order/complete/${order.code}`));
@@ -152,20 +194,18 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
       void beginPayment({ token: payment.returnToken, orderCode: order.code, provider: payment.provider });
     },
     onError: (error: Error) => {
-      if (error instanceof ApiClientError && error.code === 'PROVIDER_UNAVAILABLE') {
-        notify(dict.checkout.providerUnavailable, 'error');
-        return;
-      }
       if (error instanceof ApiClientError && error.errors && Object.keys(error.errors).length > 0) {
         const local = validate();
         const mapped: Record<string, string> = {};
-        for (const [key, messages] of Object.entries(error.errors)) mapped[key] = local[key] ?? messages[0];
+        for (const [key, messages] of Object.entries(error.errors)) {
+          mapped[key] = local[key] ?? getLocalizedFieldError(messages[0], locale);
+        }
         setErrors(mapped);
         notify(dict.checkout.requiredFieldsToast, 'error');
         focusFirstError(mapped);
         return;
       }
-      notify(dict.checkout.errorGeneric, 'error');
+      showApiError(error);
     },
   });
 
@@ -185,6 +225,41 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
     );
   }
 
+  /** Same rule as the submit-time check, in localized form; undefined when acceptable. */
+  const phoneError = (raw: string): string | undefined => {
+    const digits = normalizePhone(raw);
+    if (!digits) return dict.validation.phoneRequired;
+    if (digits.length < 6) return dict.validation.phone;
+    return undefined;
+  };
+
+  const handlePhone = (errorKey: string, store: (value: string) => void, raw: string) => {
+    const digits = normalizePhone(raw);
+    // The library reports the bare dial code while the field is empty: treat it as "cleared".
+    const value = digits === ARMENIA_DIAL_CODE ? '' : digits;
+    store(value);
+    setErrors((prev) => {
+      const message = value ? phoneError(value) : undefined;
+      if (message) return { ...prev, [errorKey]: message };
+      if (!(errorKey in prev)) return prev;
+      const next = { ...prev };
+      delete next[errorKey];
+      return next;
+    });
+  };
+
+  /** Switching regions invalidates the community: reset it and drop both errors. */
+  const changeRegion = (region: string) => {
+    update({ region, city: '' });
+    setErrors((prev) => {
+      if (!('delivery.region' in prev) && !('delivery.city' in prev)) return prev;
+      const next = { ...prev };
+      delete next['delivery.region'];
+      delete next['delivery.city'];
+      return next;
+    });
+  };
+
   const validate = (): Record<string, string> => {
     const next: Record<string, string> = {};
     if (draft.customerName.trim().length < 2) next['customer.name'] = dict.validation.required;
@@ -193,16 +268,15 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
     if (!email) next['customer.email'] = dict.validation.emailRequired;
     else if (!EMAIL_RE.test(email)) next['customer.email'] = dict.validation.email;
 
-    const customerPhone = draft.customerPhone.trim();
-    if (!customerPhone) next['customer.phone'] = dict.validation.phoneRequired;
-    else if (customerPhone.length < 6) next['customer.phone'] = dict.validation.phone;
+    const customerPhoneError = phoneError(draft.customerPhone);
+    if (customerPhoneError) next['customer.phone'] = customerPhoneError;
 
     if (draft.recipient.trim().length < 2) next['delivery.recipient'] = dict.validation.required;
 
-    const recipientPhone = draft.recipientPhone.trim();
-    if (!recipientPhone) next['delivery.phone'] = dict.validation.phoneRequired;
-    else if (recipientPhone.length < 6) next['delivery.phone'] = dict.validation.phone;
+    const recipientPhoneError = phoneError(draft.recipientPhone);
+    if (recipientPhoneError) next['delivery.phone'] = recipientPhoneError;
 
+    if (!draft.region) next['delivery.region'] = dict.validation.required;
     if (!draft.city.trim()) next['delivery.city'] = dict.validation.required;
     if (!draft.street.trim()) next['delivery.street'] = dict.validation.required;
     if (!draft.requestedDate) next['delivery.requestedDate'] = dict.validation.deliveryDateRequired;
@@ -248,10 +322,7 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
       reset();
       router.push(`${localePath(locale, '/checkout/payment/return')}?token=${encodeURIComponent(hint.token)}`);
     } catch (error) {
-      const message =
-        error instanceof ApiClientError && error.code === 'PROVIDER_UNAVAILABLE'
-          ? dict.checkout.providerUnavailable
-          : dict.checkout.paymentNotStarted;
+      const message = getLocalizedApiError(error, locale);
       setPendingPayment({ ...hint, message });
       notify(message, 'error');
     } finally {
@@ -278,11 +349,11 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
     }
     setErrors({});
     checkout.mutate({
-      customer: { name: draft.customerName, email: draft.customerEmail, phone: draft.customerPhone },
+      customer: { name: draft.customerName, email: draft.customerEmail, phone: toBackendPhone(draft.customerPhone) },
       delivery: {
         method: draft.method,
         recipient: draft.recipient,
-        phone: draft.recipientPhone,
+        phone: toBackendPhone(draft.recipientPhone),
         region: draft.region,
         city: draft.city,
         street: draft.street,
@@ -364,14 +435,31 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
               error={errors['customer.name']}
               onChange={(event) => updateField('customer.name', { customerName: event.target.value })}
             />
-            <Input
-              id="customer-phone"
+            <Field
               label={dict.checkout.phone}
               required
-              value={draft.customerPhone}
+              htmlFor="customer-phone"
               error={errors['customer.phone']}
-              onChange={(event) => updateField('customer.phone', { customerPhone: event.target.value })}
-            />
+            >
+              <PhoneInput
+                country="am"
+                masks={PHONE_MASKS}
+                value={normalizePhone(draft.customerPhone)}
+                placeholder="+374 XX XXX XXX"
+                containerClass="w-full"
+                inputClass={PHONE_INPUT_CLASS}
+                buttonClass={PHONE_BUTTON_CLASS}
+                onChange={(value) => handlePhone('customer.phone', (v) => update({ customerPhone: v }), value)}
+                inputProps={{
+                  id: 'customer-phone',
+                  name: 'customer-phone',
+                  autoComplete: 'tel',
+                  'aria-required': true,
+                  'aria-invalid': Boolean(errors['customer.phone']),
+                  'aria-describedby': errors['customer.phone'] ? 'customer-phone-error' : undefined,
+                }}
+              />
+            </Field>
             <Input
               id="customer-email"
               type="email"
@@ -396,35 +484,62 @@ export function CheckoutView({ locale, dict }: { locale: Locale; dict: Dictionar
               error={errors['delivery.recipient']}
               onChange={(event) => updateField('delivery.recipient', { recipient: event.target.value })}
             />
-            <Input
-              id="recipient-phone"
+            <Field
               label={dict.checkout.recipientPhone}
               required
-              value={draft.recipientPhone}
+              htmlFor="recipient-phone"
               error={errors['delivery.phone']}
-              onChange={(event) => updateField('delivery.phone', { recipientPhone: event.target.value })}
-            />
+            >
+              <PhoneInput
+                country="am"
+                masks={PHONE_MASKS}
+                value={normalizePhone(draft.recipientPhone)}
+                placeholder="+374 XX XXX XXX"
+                containerClass="w-full"
+                inputClass={PHONE_INPUT_CLASS}
+                buttonClass={PHONE_BUTTON_CLASS}
+                onChange={(value) => handlePhone('delivery.phone', (v) => update({ recipientPhone: v }), value)}
+                inputProps={{
+                  id: 'recipient-phone',
+                  name: 'recipient-phone',
+                  autoComplete: 'tel',
+                  'aria-required': true,
+                  'aria-invalid': Boolean(errors['delivery.phone']),
+                  'aria-describedby': errors['delivery.phone'] ? 'recipient-phone-error' : undefined,
+                }}
+              />
+            </Field>
             <Select
               id="region"
               label={dict.checkout.region}
               required
               value={draft.region}
-              onChange={(event) => update({ region: event.target.value })}
+              error={errors['delivery.region']}
+              onChange={(event) => changeRegion(event.target.value)}
             >
+              <option value="">{dict.checkout.selectRegion}</option>
               {regions.map((region) => (
                 <option key={region.key} value={region.key}>
                   {dict.regions[region.key as keyof Dictionary['regions']] ?? region.key}
                 </option>
               ))}
             </Select>
-            <Input
+            <Select
               id="city"
               label={dict.checkout.city}
               required
+              disabled={!draft.region}
               value={draft.city}
               error={errors['delivery.city']}
               onChange={(event) => updateField('delivery.city', { city: event.target.value })}
-            />
+            >
+              <option value="">{draft.region ? dict.checkout.selectCity : dict.checkout.selectRegion}</option>
+              {cityOptions.map((community) => (
+                <option key={community.value} value={community.value}>
+                  {community[locale]}
+                </option>
+              ))}
+            </Select>
             <Input
               id="street"
               label={dict.checkout.street}

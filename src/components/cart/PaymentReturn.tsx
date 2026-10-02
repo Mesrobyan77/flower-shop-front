@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { dateKey, formatPrice } from '@/lib/utils';
 import { localePath, type Dictionary, type Locale } from '@/lib/i18n';
-import { ApiClientError } from '@/lib/api/client';
+import { getLocalizedApiError } from '@/lib/api/errors';
 import { paymentApi } from '@/lib/api/commerce';
 import { qk } from '@/lib/queryKeys';
 import { clearPendingPayment, readPendingPayment, redirectToProvider, savePendingPayment } from '@/lib/paymentFlow';
@@ -70,12 +70,7 @@ export function PaymentReturn({ locale, dict }: { locale: Locale; dict: Dictiona
       client.invalidateQueries({ queryKey: qk.paymentStatus(token) });
       setStarting(false);
     } catch (error) {
-      notify(
-        error instanceof ApiClientError && error.code === 'PROVIDER_UNAVAILABLE'
-          ? dict.checkout.providerUnavailable
-          : dict.checkout.paymentNotStarted,
-        'error',
-      );
+      notify(getLocalizedApiError(error, locale), 'error');
       setStarting(false);
     }
   };

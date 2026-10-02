@@ -3,9 +3,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { accountApi, type AddressBody } from '@/lib/api/account';
 import { orderApi } from '@/lib/api/commerce';
+import { useApiError } from '@/lib/hooks/useApiError';
 import { qk } from '@/lib/queryKeys';
 import { useAuthStore } from '@/store/auth';
-import { useUiStore } from '@/store/ui';
 import type { OrderStatus } from '@/types';
 
 export function useAccountSummary() {
@@ -20,13 +20,13 @@ export function useAddresses() {
 
 export function useSaveAddress() {
   const client = useQueryClient();
-  const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   return useMutation({
     mutationFn: ({ id, body }: { id?: string; body: AddressBody }) =>
       id ? accountApi.updateAddress(id, body) : accountApi.createAddress(body),
     onSuccess: () => client.invalidateQueries({ queryKey: qk.addresses }),
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 }
 
@@ -45,9 +45,11 @@ export function useWishlist() {
 
 export function useToggleWishlist() {
   const client = useQueryClient();
+  const showApiError = useApiError();
   return useMutation({
     mutationFn: (productId: string) => accountApi.toggleWishlist(productId),
     onSuccess: () => client.invalidateQueries({ queryKey: qk.wishlist }),
+    onError: (error: Error) => showApiError(error),
   });
 }
 
@@ -67,7 +69,7 @@ export function useMyOrder(code: string) {
 
 export function useCancelOrder() {
   const client = useQueryClient();
-  const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   return useMutation({
     mutationFn: ({ code, reason }: { code: string; reason?: string }) => orderApi.cancel(code, reason),
@@ -75,7 +77,7 @@ export function useCancelOrder() {
       client.invalidateQueries({ queryKey: qk.myOrder(order.code) });
       client.invalidateQueries({ queryKey: ['my-orders'] });
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 }
 

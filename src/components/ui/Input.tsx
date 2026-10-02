@@ -34,7 +34,9 @@ export function Field({ label, hint, error, required, className, children, htmlF
       )}
       {children}
       {error ? (
-        <p className="text-[11px] text-danger-soft">{error}</p>
+        <p id={htmlFor ? `${htmlFor}-error` : undefined} className="text-[11px] text-danger-soft">
+          {error}
+        </p>
       ) : hint ? (
         <p className="text-[11px] text-ink-faint">{hint}</p>
       ) : null}
@@ -59,6 +61,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         ref={ref}
         id={id}
         aria-invalid={Boolean(error)}
+        aria-describedby={error && id ? `${id}-error` : undefined}
         className={cn(FIELD, 'h-11', error && 'border-danger-soft', className)}
         {...rest}
       />
@@ -83,6 +86,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         ref={ref}
         id={id}
         aria-invalid={Boolean(error)}
+        aria-describedby={error && id ? `${id}-error` : undefined}
         className={cn(FIELD, 'min-h-24 resize-y py-2.5 leading-relaxed', error && 'border-danger-soft', className)}
         {...rest}
       />
@@ -108,6 +112,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
           ref={ref}
           id={id}
           aria-invalid={Boolean(error)}
+          aria-describedby={error && id ? `${id}-error` : undefined}
           className={cn(FIELD, 'h-11 appearance-none pr-9', error && 'border-danger-soft', className)}
           {...rest}
         >

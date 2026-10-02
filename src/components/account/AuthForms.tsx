@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { cn } from '@/lib/utils';
 import { isLocale, localePath, type Dictionary, type Locale } from '@/lib/i18n';
 import { ApiClientError } from '@/lib/api/client';
+import { getLocalizedApiError, getLocalizedFieldError } from '@/lib/api/errors';
 import { useLogin, useRegister, useSession } from '@/lib/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Checkbox, Input } from '@/components/ui/Input';
@@ -60,7 +61,7 @@ export function LoginForm({ locale, dict }: { locale: Locale; dict: Dictionary }
       router.replace(redirectTo);
     } catch (error) {
       if (error instanceof ApiClientError) {
-        form.setError('password', { message: error.message });
+        form.setError('password', { message: getLocalizedApiError(error, locale) });
       }
     }
   });
@@ -187,8 +188,8 @@ export function RegisterForm({ locale, dict }: { locale: Locale; dict: Dictionar
         const fields = ['name', 'email', 'phone', 'password', 'confirmPassword', 'agreeTerms'] as const;
         const field = fields.find((key) => error.fieldError(key));
         const fieldMessage = field ? error.fieldError(field) : undefined;
-        if (field && fieldMessage) form.setError(field, { message: fieldMessage });
-        else form.setError('password', { message: error.message });
+        if (field && fieldMessage) form.setError(field, { message: getLocalizedFieldError(fieldMessage, locale) });
+        else form.setError('password', { message: getLocalizedApiError(error, locale) });
       }
     }
   });

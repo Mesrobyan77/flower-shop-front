@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { formatDate, formatPrice } from '@/lib/utils';
 import { defaultLocale, getDictionary } from '@/lib/i18n';
 import { adminApi } from '@/lib/api/admin';
+import { useApiError } from '@/lib/hooks/useApiError';
 import { qk } from '@/lib/queryKeys';
 import { useUiStore } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
@@ -130,6 +131,7 @@ export function OrderDetailAdmin({ id }: { id: string }) {
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const { data: order, isLoading } = useQuery({
     queryKey: qk.adminOrder(id),
@@ -152,7 +154,7 @@ export function OrderDetailAdmin({ id }: { id: string }) {
       invalidate();
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   const changePayment = useMutation({
@@ -161,7 +163,7 @@ export function OrderDetailAdmin({ id }: { id: string }) {
       invalidate();
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   const saveNote = useMutation({
@@ -170,7 +172,7 @@ export function OrderDetailAdmin({ id }: { id: string }) {
       invalidate();
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   const serverNote = order?.adminNote ?? '';

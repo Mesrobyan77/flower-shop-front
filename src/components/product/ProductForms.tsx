@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { catalogApi } from '@/lib/api/catalog';
+import { useApiError } from '@/lib/hooks/useApiError';
 import { useSession } from '@/lib/hooks/useAuth';
 import { useUiStore } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +17,7 @@ export function ReviewForm({ productId, dict }: { productId: string; dict: Dicti
   const { isAuthenticated } = useSession();
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(5);
@@ -30,7 +32,7 @@ export function ReviewForm({ productId, dict }: { productId: string; dict: Dicti
       client.invalidateQueries({ queryKey: ['product-reviews'] });
       client.invalidateQueries({ queryKey: ['product'] });
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   if (!isAuthenticated) {
@@ -96,6 +98,7 @@ export function InquiryForm({ productId, dict }: { productId: string; dict: Dict
   const { isAuthenticated } = useSession();
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const [open, setOpen] = useState(false);
   const [subject, setSubject] = useState('');
@@ -111,7 +114,7 @@ export function InquiryForm({ productId, dict }: { productId: string; dict: Dict
       notify(dict.common.save, 'success');
       client.invalidateQueries({ queryKey: ['product-inquiries'] });
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   if (!isAuthenticated) {

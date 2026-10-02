@@ -2,8 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cartApi, type AddToCartBody } from '@/lib/api/commerce';
+import { useApiError } from '@/lib/hooks/useApiError';
 import { qk } from '@/lib/queryKeys';
-import { useUiStore } from '@/store/ui';
 import type { Cart } from '@/types';
 
 export function useCart() {
@@ -21,20 +21,20 @@ export function useCartCount(): number {
 
 export function useAddToCart() {
   const client = useQueryClient();
-  const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   return useMutation({
     mutationFn: (body: AddToCartBody) => cartApi.add(body),
     onSuccess: (cart: Cart) => {
       client.setQueryData(qk.cart, cart);
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 }
 
 export function useUpdateCartItem() {
   const client = useQueryClient();
-  const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   return useMutation({
     mutationFn: ({ itemId, ...body }: { itemId: string; quantity?: number }) => cartApi.update(itemId, body),
@@ -62,7 +62,7 @@ export function useUpdateCartItem() {
     },
     onError: (error: Error, _vars, context) => {
       if (context?.previous) client.setQueryData(qk.cart, context.previous);
-      notify(error.message, 'error');
+      showApiError(error);
     },
     onSuccess: (cart: Cart) => client.setQueryData(qk.cart, cart),
     onSettled: () => client.invalidateQueries({ queryKey: qk.cart }),
@@ -71,12 +71,12 @@ export function useUpdateCartItem() {
 
 export function useRemoveCartItem() {
   const client = useQueryClient();
-  const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   return useMutation({
     mutationFn: (itemId: string) => cartApi.remove(itemId),
     onSuccess: (cart: Cart) => client.setQueryData(qk.cart, cart),
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 }
 

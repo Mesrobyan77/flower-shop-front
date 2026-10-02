@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { defaultLocale, getDictionary } from '@/lib/i18n';
 import { adminApi } from '@/lib/api/admin';
+import { useApiError } from '@/lib/hooks/useApiError';
 import { qk } from '@/lib/queryKeys';
 import { useUiStore } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
@@ -22,6 +23,7 @@ export function SettingsAdmin() {
   const dict = getDictionary(defaultLocale);
   const client = useQueryClient();
   const notify = useUiStore((s) => s.notify);
+  const showApiError = useApiError();
 
   const { data, isLoading } = useQuery({ queryKey: qk.adminSettings, queryFn: adminApi.settings });
   const [form, setForm] = useState<StoreSettings>({});
@@ -37,7 +39,7 @@ export function SettingsAdmin() {
       client.invalidateQueries({ queryKey: qk.settings });
       notify(dict.common.save, 'success');
     },
-    onError: (error: Error) => notify(error.message, 'error'),
+    onError: (error: Error) => showApiError(error),
   });
 
   if (isLoading) return <Skeleton className="h-96 w-full" />;

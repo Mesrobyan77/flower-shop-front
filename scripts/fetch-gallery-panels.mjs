@@ -8,7 +8,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const UA = {
-  'User-Agent': 'AnahitFlowerDesign/1.0 (seed catalogue build; contact: info@anahit-flower.am)',
+  'User-Agent': 'AURELIA/1.0 (seed catalogue build; contact: info@anahit-flower.am)',
 };
 
 const here = dirname(fileURLToPath(import.meta.url));
